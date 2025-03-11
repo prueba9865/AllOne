@@ -12,17 +12,15 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Usuario {
+public class Chat {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String nombre;
-    private String email;
-    private String password;
-    private String avatar;
+    private String tipo; // individual o grupo
+    private String nombre_grupo;
     private LocalDateTime created_at;
 
-    @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "chat", cascade = CascadeType.ALL, orphanRemoval = true) // 🔴 mappedBy debe coincidir con la relación en Mensaje
     private List<Mensaje> mensajes = new ArrayList<>();
 }
