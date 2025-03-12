@@ -15,8 +15,8 @@ public class UsuarioChat {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String rol;
-    private LocalDateTime joined_at;
+    private String rolGrupo;
+    private LocalDateTime joinedAt;
 
     @ManyToOne
     @JoinColumn(name = "chat_id", nullable = false) // 🔴 Define la clave foránea

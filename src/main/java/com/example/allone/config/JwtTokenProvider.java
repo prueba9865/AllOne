@@ -21,22 +21,17 @@ public class JwtTokenProvider {
     private static final long EXPIRATION_TIME = 86400000; // 1 día
 
 
-    public String  generateToken(Authentication authentication) {
+    public String generateToken(Authentication authentication) {
 
         Usuario user = (Usuario) authentication.getPrincipal();
         SecretKey key = Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
-
-        // Obtener las autoridades actuales y convertirlas a String
-        List<String> authorities = user.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)  // Convertir cada GrantedAuthority a String
-                .collect(Collectors.toList());  // Recogerlo en una lista de String
 
         return Jwts.builder()
                 .subject(Long.toString(user.getId()))
                 .claim("id", user.getId())
                 .claim("email", user.getEmail())
                 .claim("username", user.getUsername())
-                .claim("role", authorities)
+                .claim("rolUser", user.getRolUser())
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
                 .signWith(key) // Firma con el algoritmo por defecto

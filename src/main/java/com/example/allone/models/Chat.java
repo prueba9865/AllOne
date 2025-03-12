@@ -18,8 +18,8 @@ public class Chat {
     private Long id;
 
     private String tipo; // individual o grupo
-    private String nombre_grupo;
-    private LocalDateTime created_at;
+    private String nombreGrupo;
+    private LocalDateTime createdAt;
 
     @OneToMany(mappedBy = "chat", cascade = CascadeType.ALL, orphanRemoval = true) // 🔴 mappedBy debe coincidir con la relación en Mensaje
     private List<Mensaje> mensajes = new ArrayList<>();

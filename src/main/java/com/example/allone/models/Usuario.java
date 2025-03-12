@@ -1,9 +1,14 @@
 package com.example.allone.models;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,13 +22,44 @@ public class Usuario {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotBlank(message = "El nombre no puede estar en blanco")
+    @Pattern(regexp = "^[A-Za-zñÑáéíóúÁÉÍÓÚ ]{1,50}$", message = "El nombre solo puede contener letras y espacios")
     private String nombre;
+
+    @Email(regexp = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}$", message = "Introduce un email válido")
+    @NotBlank(message = "El email no puede estar en blanco")
     private String email;
+
+    @Column(unique = true)
+    @NotBlank(message = "El usuario no puede estar en blanco")
+    @Size(min = 3, max = 20, message = "El username debe tener entre 3 y 20 caracteres")
+    @Pattern(regexp = "^[a-zA-Z0-9_.-]{3,20}$", message = "El username solo puede contener letras, números, puntos, guiones y guiones bajos")
     private String username;
+
+    @NotBlank(message = "La contraseña no puede estar en blanco")
+    @Size(min = 12, message = "La contraseña debe tener mínimo 12 caracteres")
+    @Pattern(
+            regexp = "^(?=.*[A-Z])(?=.*[a-z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{12,}$",
+            message = "La contraseña debe tener al menos 12 caracteres, incluir una mayúscula, una minúscula, un número y un carácter especial"
+    )
     private String password;
+
     private String avatar;
-    private LocalDateTime created_at;
+
+    @Pattern(regexp = "^\\+\\d{1,2}\\s\\d{7,12}$", message = "Formato erróneo del número de teléfono")
+    @NotBlank(message = "El número de teléfono no puede estar en blanco")
+    private String telefono;
+
+    private String rolUser;
+    private LocalDateTime createdAt;
 
     @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Mensaje> mensajes = new ArrayList<>();
+
+    @PrePersist
+    public void prePersist() {
+        this.rolUser = "USER";
+        this.createdAt = LocalDateTime.now().withNano(0); // Elimina las décimas de segundo
+    }
 }
+

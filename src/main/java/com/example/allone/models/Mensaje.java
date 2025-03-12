@@ -17,7 +17,7 @@ public class Mensaje {
 
     private String contenido;
     private String tipo; // texto, imagen o video
-    private LocalDateTime created_at;
+    private LocalDateTime createdAt;
 
     @ManyToOne
     @JoinColumn(name = "chat_id", nullable = false) // 🔴 Define la clave foránea correctamente
