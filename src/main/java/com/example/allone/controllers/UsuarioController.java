@@ -6,6 +6,7 @@ import com.example.allone.DTO.UserRegisterDTO;
 import com.example.allone.config.JwtTokenProvider;
 import com.example.allone.models.Usuario;
 import com.example.allone.repositories.UsuarioRepository;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -35,7 +36,7 @@ public class UsuarioController {
     private PasswordEncoder passwordEncoder;
 
     @PostMapping("/api/v1/auth/register")
-    public ResponseEntity<Map<String,String>> crearUsuario(@RequestBody UserRegisterDTO userRegisterDTO) {
+    public ResponseEntity<Map<String,String>> crearUsuario(@RequestBody @Valid UserRegisterDTO userRegisterDTO) {
         try {
             if(userRegisterDTO.getPassword().equals(userRegisterDTO.getPassword2())){
                 Usuario usuario = this.userRepository.save(
@@ -44,6 +45,7 @@ public class UsuarioController {
                                 .username(userRegisterDTO.getUsername())
                                 .password(passwordEncoder.encode(userRegisterDTO.getPassword()))
                                 .email(userRegisterDTO.getEmail())
+                                .telefono(userRegisterDTO.getTelefono())
                                 .avatar(userRegisterDTO.getAvatar())
                                 .build());
 
