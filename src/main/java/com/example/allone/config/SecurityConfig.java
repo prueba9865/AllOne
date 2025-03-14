@@ -1,5 +1,6 @@
 package com.example.allone.config;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -22,21 +23,16 @@ import java.util.List;
 
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
 
-    private JwtFilter jwtFilter;
+    private final JwtFilter jwtFilter;
     private final UserDetailsService userDetailsService;
 
-    public SecurityConfig(UserDetailsService userDetailsService, JwtFilter jwtFilter) {
-        this.userDetailsService = userDetailsService;
-        this.jwtFilter = jwtFilter;
-    }
-
     @Bean
-    public AuthenticationManager authenticationManager(PasswordEncoder passwordEncoder,
-                                                       UserDetailsService userDetailsService) throws Exception {
+    public AuthenticationManager authenticationManager(PasswordEncoder passwordEncoder) {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-        authProvider.setUserDetailsService(userDetailsService);
+        authProvider.setUserDetailsService(this.userDetailsService); // Usa el atributo de clase
         authProvider.setPasswordEncoder(passwordEncoder);
         return new ProviderManager(authProvider);
     }
@@ -65,15 +61,16 @@ public class SecurityConfig {
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // Usamos tokens JWT sin sesión en el servidor
                 .authorizeHttpRequests(auth -> auth
                         //.requestMatchers(HttpMethod.POST, "/clientes").authenticated()
-                        .requestMatchers(HttpMethod.PUT, "/clientes/*").authenticated()
+                        /*.requestMatchers(HttpMethod.PUT, "/clientes/*").authenticated()
                         .requestMatchers(HttpMethod.DELETE, "/clientes/*").authenticated()
                         .requestMatchers(HttpMethod.POST, "/mesas").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/mesas/*").authenticated()
                         .requestMatchers(HttpMethod.DELETE, "/mesas/*").authenticated()
                         .requestMatchers(HttpMethod.POST, "/reservas").authenticated()
                         .requestMatchers(HttpMethod.DELETE, "/reservas/*").authenticated()
-                        .requestMatchers(HttpMethod.PUT, "/auth/asignarRol/*").authenticated()
-                        .anyRequest().permitAll()
+                        .requestMatchers(HttpMethod.PUT, "/auth/asignarRol/*").authenticated()*/
+                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/login", "/api/v1/auth/register").permitAll()
+                        .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class); // Filtro JWT para autenticación
 

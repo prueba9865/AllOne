@@ -36,53 +36,44 @@ public class UsuarioController {
     private PasswordEncoder passwordEncoder;
 
     @PostMapping("/api/v1/auth/register")
-    public ResponseEntity<Map<String,String>> crearUsuario(@RequestBody @Valid UserRegisterDTO userRegisterDTO) {
-        try {
-            if(userRegisterDTO.getPassword().equals(userRegisterDTO.getPassword2())){
-                Usuario usuario = this.userRepository.save(
-                        Usuario.builder()
-                                .nombre(userRegisterDTO.getNombre())
-                                .username(userRegisterDTO.getUsername())
-                                .password(passwordEncoder.encode(userRegisterDTO.getPassword()))
-                                .email(userRegisterDTO.getEmail())
-                                .telefono(userRegisterDTO.getTelefono())
-                                .avatar(userRegisterDTO.getAvatar())
-                                .build());
-
-                return ResponseEntity.status(HttpStatus.CREATED).body(
-                        Map.of("message","Usuario creado exitosamente")
-                );
-            }
+    public ResponseEntity<Map<String, String>> crearUsuario(@RequestBody @Valid UserRegisterDTO userRegisterDTO) {
+        if (!userRegisterDTO.getPassword().equals(userRegisterDTO.getPassword2())) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                    Map.of("error","Las credenciales no coinciden")
+                    Map.of("error", "Las contraseñas no coinciden")
             );
-        }catch (Exception e){
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error","Email o username ya utilizado"));
         }
+
+        Usuario usuario = this.userRepository.save(
+                Usuario.builder()
+                        .nombre(userRegisterDTO.getNombre())
+                        .username(userRegisterDTO.getUsername())
+                        .password(passwordEncoder.encode(userRegisterDTO.getPassword()))
+                        .email(userRegisterDTO.getEmail())
+                        .telefono(userRegisterDTO.getTelefono())
+                        .avatar(userRegisterDTO.getAvatar())
+                        .build());
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(
+                Map.of("message", "Usuario creado exitosamente")
+        );
     }
+
 
     @PostMapping("/api/v1/auth/login")
     public ResponseEntity<?> crearTokenUsuario(@RequestBody LoginRequestDTO loginRequestDTO) {
-        try {
-            //Validamos al usuario en Spring (hacemos login manualmente)
-            UsernamePasswordAuthenticationToken userPassAuthToken = new UsernamePasswordAuthenticationToken(loginRequestDTO.getUsername(), loginRequestDTO.getPassword());
-            Authentication auth = authenticationManager.authenticate(userPassAuthToken);    //valida el usuario y devuelve un objeto Authentication con sus datos
-            //Obtenemos el UserEntity del usuario logueado
-            Usuario user = (Usuario) auth.getPrincipal();
+        // Validamos al usuario en Spring (hacemos login manualmente)
+        UsernamePasswordAuthenticationToken userPassAuthToken =
+                new UsernamePasswordAuthenticationToken(loginRequestDTO.getUsername(), loginRequestDTO.getPassword());
 
-            //Generamos un token con los datos del usuario (la clase tokenProvider ha hemos creado nosotros para no poner aquí todo el código
-            String token = this.tokenProvider.generateToken(auth);
+        Authentication auth = authenticationManager.authenticate(userPassAuthToken); // Puede lanzar BadCredentialsException
 
-            //Devolvemos un código 200 con el username y token JWT
-            return ResponseEntity.ok(new LoginResponseDTO(user.getId(), user.getUsername(), token));
-        }catch (Exception e) {  //Si el usuario no es válido, salta una excepción BadCredentialsException
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
-                    Map.of(
-                            "path", "/api/v1/auth/login",
-                            "message", "Credenciales erróneas",
-                            "timestamp", new Date()
-                    )
-            );
-        }
+        // Obtenemos el usuario autenticado
+        Usuario user = (Usuario) auth.getPrincipal();
+
+        // Generamos un token con los datos del usuario
+        String token = this.tokenProvider.generateToken(auth);
+
+        // Devolvemos un código 200 con el username y token JWT
+        return ResponseEntity.ok(new LoginResponseDTO(user.getId(), user.getUsername(), token));
     }
 }

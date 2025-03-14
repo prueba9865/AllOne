@@ -9,6 +9,7 @@ import lombok.*;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -52,6 +53,8 @@ public class Usuario {
     private String telefono;
 
     private String rolUser;
+
+    @Column(name = "created_at", columnDefinition = "TIMESTAMP(0)")  // Asegura que se almacene sin microsegundos
     private LocalDateTime createdAt;
 
     @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -60,7 +63,7 @@ public class Usuario {
     @PrePersist
     public void prePersist() {
         this.rolUser = "USER";
-        this.createdAt = LocalDateTime.now().withNano(0); // Elimina las décimas de segundo
+        this.createdAt = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS); // Truncado a segundos
     }
 }
 
