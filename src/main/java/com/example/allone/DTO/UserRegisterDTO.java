@@ -42,6 +42,7 @@
                 message = "La contraseña debe tener al menos 12 caracteres, incluir una mayúscula, una minúscula, un número y un carácter especial"
         )
         private String password;
+
         private String password2;
         private String avatar;
     }

@@ -39,11 +39,6 @@ public class Usuario {
     private String username;
 
     @NotBlank(message = "La contraseña no puede estar en blanco")
-    @Size(min = 12, message = "La contraseña debe tener mínimo 12 caracteres")
-    @Pattern(
-            regexp = "^(?=.*[A-Z])(?=.*[a-z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{12,}$",
-            message = "La contraseña debe tener al menos 12 caracteres, incluir una mayúscula, una minúscula, un número y un carácter especial"
-    )
     private String password;
 
     private String avatar;
