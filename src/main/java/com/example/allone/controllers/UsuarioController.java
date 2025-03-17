@@ -13,10 +13,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
 
@@ -76,4 +76,17 @@ public class UsuarioController {
         // Devolvemos un código 200 con el username y token JWT
         return ResponseEntity.ok(new LoginResponseDTO(user.getId(), user.getUsername(), token));
     }
+
+    @GetMapping("/home")
+    @ResponseBody
+    public String home(@AuthenticationPrincipal OAuth2User user) {
+        if (user == null) {
+            System.out.println("Error: usuario no autenticado");
+            return "Usuario no autenticado";
+        }
+
+        System.out.println("Usuario autenticado: " + user.getAttributes());
+        return "Bienvenido, " + user.getAttribute("name") + " (" + user.getAttribute("email") + ")";
+    }
+
 }
