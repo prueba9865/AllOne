@@ -49,7 +49,6 @@ public class UsuarioController {
                         .username(userRegisterDTO.getUsername())
                         .password(passwordEncoder.encode(userRegisterDTO.getPassword()))
                         .email(userRegisterDTO.getEmail())
-                        .telefono(userRegisterDTO.getTelefono())
                         .avatar(userRegisterDTO.getAvatar())
                         .build());
 
@@ -76,17 +75,4 @@ public class UsuarioController {
         // Devolvemos un código 200 con el username y token JWT
         return ResponseEntity.ok(new LoginResponseDTO(user.getId(), user.getUsername(), token));
     }
-
-    @GetMapping("/home")
-    @ResponseBody
-    public String home(@AuthenticationPrincipal OAuth2User user) {
-        if (user == null) {
-            System.out.println("Error: usuario no autenticado");
-            return "Usuario no autenticado";
-        }
-
-        System.out.println("Usuario autenticado: " + user.getAttributes());
-        return "Bienvenido, " + user.getAttribute("name") + " (" + user.getAttribute("email") + ")";
-    }
-
 }

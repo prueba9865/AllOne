@@ -46,11 +46,6 @@ public class Usuario implements UserDetails {
     private String password;
 
     private String avatar;
-
-    @Pattern(regexp = "^\\+\\d{1,2}\\s\\d{7,12}$", message = "Formato erróneo del número de teléfono")
-    @NotBlank(message = "El número de teléfono no puede estar en blanco")
-    private String telefono;
-
     private String rolUser;
 
     @Column(name = "created_at", columnDefinition = "TIMESTAMP(0)")  // Asegura que se almacene sin microsegundos
