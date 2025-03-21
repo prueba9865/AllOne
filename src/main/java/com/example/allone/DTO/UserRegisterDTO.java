@@ -31,10 +31,6 @@
         @Pattern(regexp = "^[a-zA-Z0-9_.-]{3,20}$", message = "El username solo puede contener letras, números, puntos, guiones y guiones bajos")
         private String username;
 
-        @Pattern(regexp = "^\\+\\d{1,2}\\s\\d{7,12}$", message = "Formato erróneo del número de teléfono")
-        @NotBlank(message = "El número de teléfono no puede estar en blanco")
-        private String telefono;
-
         @NotBlank(message = "La contraseña no puede estar en blanco")
         @Size(min = 12, message = "La contraseña debe tener mínimo 12 caracteres")
         @Pattern(

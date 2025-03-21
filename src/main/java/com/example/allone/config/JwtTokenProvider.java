@@ -29,6 +29,7 @@ public class JwtTokenProvider {
         return Jwts.builder()
                 .subject(Long.toString(user.getId()))
                 .claim("id", user.getId())
+                .claim("name", user.getNombre())
                 .claim("email", user.getEmail())
                 .claim("username", user.getUsername())
                 .claim("rolUser", user.getRolUser())
