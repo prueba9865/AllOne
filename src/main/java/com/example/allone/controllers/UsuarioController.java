@@ -59,7 +59,7 @@ public class UsuarioController {
 
 
     @PostMapping("/api/v1/auth/login")
-    public ResponseEntity<?> crearTokenUsuario(@RequestBody LoginRequestDTO loginRequestDTO) {
+    public ResponseEntity<?> crearTokenUsuario(@RequestBody @Valid LoginRequestDTO loginRequestDTO) {
         // Validamos al usuario en Spring (hacemos login manualmente)
         UsernamePasswordAuthenticationToken userPassAuthToken =
                 new UsernamePasswordAuthenticationToken(loginRequestDTO.getUsername(), loginRequestDTO.getPassword());
