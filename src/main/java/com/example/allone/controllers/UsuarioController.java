@@ -10,6 +10,7 @@ import jakarta.validation.Valid;
 import net.coobird.thumbnailator.Thumbnails;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -30,7 +31,7 @@ import java.util.*;
 @RestController
 public class UsuarioController {
     private static final List<String> PERMITTED_TYPES = List.of("image/jpeg", "image/png", "image/webp");
-    private static final long MAX_FILE_SIZE = 10000000;
+    private static final long MAX_FILE_SIZE = 10485760; // 10 MB en bytes
     private static final String UPLOADS_DIRECTORY = "uploads/avatars";
 
     @Autowired
@@ -45,24 +46,32 @@ public class UsuarioController {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    @PostMapping("/api/v1/auth/register")
-    public ResponseEntity<Map<String, String>> crearUsuario(@RequestBody @Valid UserRegisterDTO userRegisterDTO,
-                                                            @RequestParam("avatar") MultipartFile avatar) {
-        if (!userRegisterDTO.getPassword().equals(userRegisterDTO.getPassword2())) {
+    @PostMapping(value = "/api/v1/auth/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Map<String, String>> crearUsuario(
+            @RequestParam("nombre") String nombre,
+            @RequestParam("email") String email,
+            @RequestParam("username") String username,
+            @RequestParam("password") String password,
+            @RequestParam("password2") String password2,
+            @RequestParam("avatar") MultipartFile avatar) {
+
+        if (!password.equals(password2)) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
                     Map.of("error", "Las contraseñas no coinciden")
             );
         }
 
-        guardarFotos(avatar, userRegisterDTO);
+        // Guardar la imagen y obtener el nombre del archivo
+        String nombreFoto = guardarFotos(avatar);
 
+        // Crear el usuario con el nombre del archivo de la imagen
         Usuario usuario = this.userRepository.save(
                 Usuario.builder()
-                        .nombre(userRegisterDTO.getNombre())
-                        .username(userRegisterDTO.getUsername())
-                        .password(passwordEncoder.encode(userRegisterDTO.getPassword()))
-                        .email(userRegisterDTO.getEmail())
-                        .avatar(userRegisterDTO.getAvatar())
+                        .nombre(nombre)
+                        .username(username)
+                        .password(passwordEncoder.encode(password))
+                        .email(email)
+                        .avatar(nombreFoto) // Usar el nombre del archivo directamente
                         .build());
 
         return ResponseEntity.status(HttpStatus.CREATED).body(
@@ -89,7 +98,7 @@ public class UsuarioController {
         return ResponseEntity.ok(new LoginResponseDTO(user.getId(), user.getUsername(), token));
     }
 
-    public void guardarFotos(MultipartFile foto, UserRegisterDTO userRegisterDTO) {
+    public String guardarFotos(MultipartFile foto) {
         // Directorio temporal donde almacenar las fotos antes de redimensionarlas
         Path directorioTemporal = Paths.get(System.getProperty("java.io.tmpdir"));
 
@@ -111,12 +120,13 @@ public class UsuarioController {
                 // Eliminar el archivo temporal después de redimensionarlo
                 Files.deleteIfExists(rutaTemporal);
 
-                userRegisterDTO.setAvatar(nombreFoto);
+                return nombreFoto; // Devolver el nombre del archivo
 
             } catch (IOException e) {
                 throw new RuntimeException("Error al guardar y redimensionar la imagen: " + e.getMessage(), e);
             }
         }
+        return null; // Si no hay archivo, devolver null
     }
 
     public static void validarArchivo(MultipartFile file) {
