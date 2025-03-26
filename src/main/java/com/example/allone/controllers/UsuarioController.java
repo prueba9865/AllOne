@@ -6,8 +6,10 @@ import com.example.allone.DTO.UserRegisterDTO;
 import com.example.allone.config.JwtTokenProvider;
 import com.example.allone.models.Usuario;
 import com.example.allone.repositories.UsuarioRepository;
+import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import net.coobird.thumbnailator.Thumbnails;
+import org.apache.catalina.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -19,6 +21,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
@@ -46,37 +49,34 @@ public class UsuarioController {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Transactional
     @PostMapping(value = "/api/v1/auth/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<Map<String, String>> crearUsuario(
-            @RequestParam("nombre") String nombre,
-            @RequestParam("email") String email,
-            @RequestParam("username") String username,
-            @RequestParam("password") String password,
-            @RequestParam("password2") String password2,
-            @RequestParam("avatar") MultipartFile avatar) {
+    public ResponseEntity<Map<String, String>> crearUsuario(@Valid @ModelAttribute UserRegisterDTO registroDTO, WebRequest request) {
 
-        if (!password.equals(password2)) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                    Map.of("error", "Las contraseñas no coinciden")
-            );
+        // 1. Validar contraseñas (esto no está cubierto por tu ExceptionHandler)
+        if (!registroDTO.getPassword().equals(registroDTO.getPassword2())) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Las contraseñas no coinciden"));
         }
 
-        // Guardar la imagen y obtener el nombre del archivo
-        String nombreFoto = guardarFotos(avatar);
+        // 2. Guardar la imagen
+        String nombreArchivo = guardarFotos(registroDTO.getAvatar());
 
-        // Crear el usuario con el nombre del archivo de la imagen
-        Usuario usuario = this.userRepository.save(
-                Usuario.builder()
-                        .nombre(nombre)
-                        .username(username)
-                        .password(passwordEncoder.encode(password))
-                        .email(email)
-                        .avatar(nombreFoto) // Usar el nombre del archivo directamente
-                        .build());
+        // 🔹 Establecer el nombre del archivo en el request (para limpieza en caso de error)
+        request.setAttribute("nombreArchivo", nombreArchivo, WebRequest.SCOPE_REQUEST);
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(
-                Map.of("message", "Usuario creado exitosamente")
-        );
+        // 3. Intentar guardar el usuario (deja que el ExceptionHandler maneje DataIntegrityViolationException)
+        Usuario usuario = Usuario.builder()
+                .nombre(registroDTO.getNombre())
+                .username(registroDTO.getUsername())
+                .password(passwordEncoder.encode(registroDTO.getPassword()))
+                .avatar(nombreArchivo)
+                .email(registroDTO.getEmail())
+                .build();
+
+        userRepository.save(usuario); // Si falla, se lanzará DataIntegrityViolationException
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(Map.of("message", "Usuario creado exitosamente"));
     }
 
 

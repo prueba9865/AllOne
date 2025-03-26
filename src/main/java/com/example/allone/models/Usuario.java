@@ -1,10 +1,7 @@
 package com.example.allone.models;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -45,7 +42,9 @@ public class Usuario implements UserDetails {
     @NotBlank(message = "La contraseña no puede estar en blanco")
     private String password;
 
+    @NotNull(message = "El avatar es obligatorio")
     private String avatar;
+
     private String rolUser;
 
     @Column(name = "created_at", columnDefinition = "TIMESTAMP(0)")  // Asegura que se almacene sin microsegundos

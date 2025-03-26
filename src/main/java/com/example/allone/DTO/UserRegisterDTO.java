@@ -1,14 +1,12 @@
     package com.example.allone.DTO;
 
     import jakarta.persistence.Column;
-    import jakarta.validation.constraints.Email;
-    import jakarta.validation.constraints.NotBlank;
-    import jakarta.validation.constraints.Pattern;
-    import jakarta.validation.constraints.Size;
+    import jakarta.validation.constraints.*;
     import lombok.AllArgsConstructor;
     import lombok.Builder;
     import lombok.Data;
     import lombok.NoArgsConstructor;
+    import org.springframework.web.multipart.MultipartFile;
 
     @Data
     @NoArgsConstructor
@@ -46,4 +44,7 @@
                 message = "La contraseña debe tener al menos 12 caracteres, incluir una mayúscula, una minúscula, un número y un carácter especial"
         )
         private String password2;
+
+        @NotNull(message = "El avatar es obligatorio")
+        private MultipartFile avatar;
     }
