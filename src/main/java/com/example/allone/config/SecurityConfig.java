@@ -1,5 +1,6 @@
 package com.example.allone.config;
 
+import jakarta.servlet.http.Cookie;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -60,11 +61,17 @@ public class SecurityConfig {
         http.csrf(csrf -> csrf.disable())
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/v1/auth/**").permitAll()  // Permitir login y registro
+                        .requestMatchers("/api/v1/auth/**", "/decode-jwt").permitAll()  // Permitir login y registro
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2
                         .successHandler((request, response, authentication) -> {
+                            String jwtToken = jwtTokenProvider.generateTokenGoogle(authentication);
+                            Cookie cookie = new Cookie("token", jwtToken);
+                            cookie.setHttpOnly(false);
+                            cookie.setSecure(true); // Solo HTTPS
+                            cookie.setPath("/");
+                            response.addCookie(cookie);
                             // Redirigir al cliente a la página de bienvenida con el nombre en la URL
                             response.sendRedirect("/add");
                         })

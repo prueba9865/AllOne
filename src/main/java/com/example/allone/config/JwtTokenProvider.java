@@ -1,18 +1,25 @@
 package com.example.allone.config;
 
 import com.example.allone.models.Usuario;
+import com.example.allone.models.UsuarioGoogle;
+import com.example.allone.repositories.UsuarioGoogleRepository;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtParser;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import io.micrometer.common.util.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Component
@@ -20,6 +27,12 @@ public class JwtTokenProvider {
     private static final String SECRET_KEY = "zskfldj394852l3kj4tho9a8yt9qa4)()(%&asfdasdrtg45545·%·%";
     private static final long EXPIRATION_TIME = 86400000; // 1 día
 
+    @Autowired
+    private UsuarioGoogleRepository usuarioGoogleRepository;
+
+    public SecretKey claveFirma(){
+        return Keys.hmacShaKeyFor(SECRET_KEY.getBytes(StandardCharsets.UTF_8));
+    }
 
     public String generateToken(Authentication authentication) {
 
@@ -32,7 +45,26 @@ public class JwtTokenProvider {
                 .claim("name", user.getNombre())
                 .claim("email", user.getEmail())
                 .claim("username", user.getUsername())
+                .claim("avatar", user.getAvatar())
                 .claim("rolUser", user.getRolUser())
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
+                .signWith(key) // Firma con el algoritmo por defecto
+                .compact();
+    }
+
+    public String generateTokenGoogle(Authentication authentication) {
+
+        OAuth2User user = (OAuth2User) authentication.getPrincipal();
+        SecretKey key = Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
+
+        return Jwts.builder()
+                .subject(user.getAttribute("email"))
+                .claim("name", user.getAttribute("name"))
+                .claim("email", user.getAttribute("email"))
+                .claim("avatar", user.getAttribute("picture"))
+                .claim("username", user.getAttribute("given_name"))
+                .claim("rolUser", "USER")
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
                 .signWith(key) // Firma con el algoritmo por defecto

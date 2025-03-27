@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -34,6 +35,12 @@ public class UsuarioGoogle {
     @Email(regexp = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}$", message = "Introduce un email válido")
     @NotBlank(message = "El email no puede estar en blanco")
     private String email;
+
+    @Column(unique = true)
+    @NotBlank(message = "El usuario no puede estar en blanco")
+    @Size(min = 3, max = 20, message = "El username debe tener entre 3 y 20 caracteres")
+    @Pattern(regexp = "^[a-zA-Z0-9_.-]{3,20}$", message = "El username solo puede contener letras, números, puntos, guiones y guiones bajos")
+    private String username;
 
     private String avatar;
     private String rolUser;
