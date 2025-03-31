@@ -40,6 +40,9 @@ public class UsuarioGoogleController {
                 .parseSignedClaims(jwtToken)
                 .getPayload();
 
+        if (claims.get("id") != null){
+            return ResponseEntity.ok().body(Map.of("avatar", "http://localhost:8080/uploads/avatars/" + claims.get("avatar", String.class)));
+        }
         return ResponseEntity.ok().body(Map.of("avatar", claims.get("avatar", String.class)));
     }
 
@@ -50,6 +53,13 @@ public class UsuarioGoogleController {
             System.out.println("Error: usuario no autenticado");
             return ResponseEntity.status(HttpStatus.FOUND)
                     .header("Location", "http://localhost:5500/error.html")
+                    .build();
+        }
+
+        if(this.userGoogleRepository.findByUsername(user.getAttribute("given_name")).isPresent()){
+            // Redirigir a una IP y puerto específicos
+            return ResponseEntity.status(HttpStatus.FOUND)
+                    .header("Location", "http://localhost:5500/home.html")
                     .build();
         }
 
