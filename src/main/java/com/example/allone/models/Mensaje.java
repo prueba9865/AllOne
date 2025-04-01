@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 
 @Entity
 @Data
@@ -30,4 +31,9 @@ public class Mensaje {
     @ManyToOne
     @JoinColumn(name = "usuario_google_id", nullable = false)
     private UsuarioGoogle usuarioGoogle;
+
+    @PrePersist
+    public void prePersist() {
+        this.createdAt = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS); // Truncado a segundos
+    }
 }

@@ -3,14 +3,20 @@ package com.example.allone.controllers;
 import com.example.allone.DTO.LoginRequestDTO;
 import com.example.allone.DTO.LoginResponseDTO;
 import com.example.allone.DTO.UserRegisterDTO;
+import com.example.allone.DTO.UsuarioDTO;
 import com.example.allone.config.JwtTokenProvider;
 import com.example.allone.models.Usuario;
+import com.example.allone.models.UsuarioGoogle;
+import com.example.allone.repositories.UsuarioGoogleRepository;
 import com.example.allone.repositories.UsuarioRepository;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import net.coobird.thumbnailator.Thumbnails;
 import org.apache.catalina.User;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -30,6 +36,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @RestController
 public class UsuarioController {
@@ -47,7 +54,41 @@ public class UsuarioController {
     private UsuarioRepository userRepository;
 
     @Autowired
+    private UsuarioGoogleRepository usuarioGoogleRepository;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @GetMapping("/usuarios")
+    public ResponseEntity<List<Map<String, Object>>> getUsuariosSimplificados() {
+        List<Map<String, Object>> usuariosSimplificados = userRepository.findAll().stream()
+                .map(usuario -> {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("id", usuario.getId());
+                    map.put("name", usuario.getNombre());
+                    map.put("username", usuario.getUsername());
+                    map.put("avatar", usuario.getAvatar() != null ? usuario.getAvatar() : "/default-avatar.png");
+                    return map;
+                })
+                .collect(Collectors.toList());
+
+        // 2. Obtener usuarios Google y mapear
+        List<Map<String, Object>> usuariosGoogleSimplificados = usuarioGoogleRepository.findAll().stream()
+                .map(usuario -> {
+                        Map<String, Object> map = new HashMap<>();
+                        map.put("id", usuario.getId());
+                        map.put("name", usuario.getNombre());
+                        map.put("username", usuario.getUsername());
+                        map.put("avatar", usuario.getAvatar());
+                        return map;
+                })
+                .collect(Collectors.toList());
+
+        // 3. Combinar ambas listas
+        usuariosSimplificados.addAll(usuariosGoogleSimplificados);
+
+        return ResponseEntity.ok(usuariosSimplificados);
+    }
 
     @Transactional
     @PostMapping(value = "/api/v1/auth/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
