@@ -67,7 +67,7 @@ public class UsuarioController {
                     map.put("id", usuario.getId());
                     map.put("name", usuario.getNombre());
                     map.put("username", usuario.getUsername());
-                    map.put("avatar", usuario.getAvatar() != null ? usuario.getAvatar() : "/default-avatar.png");
+                    map.put("avatar", usuario.getAvatar() != null ? "http://localhost:8080/uploads/avatars/" + usuario.getAvatar() : "/default-avatar.png");
                     return map;
                 })
                 .collect(Collectors.toList());
