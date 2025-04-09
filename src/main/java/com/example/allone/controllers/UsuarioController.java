@@ -5,8 +5,10 @@ import com.example.allone.DTO.LoginResponseDTO;
 import com.example.allone.DTO.UserRegisterDTO;
 import com.example.allone.DTO.UsuarioDTO;
 import com.example.allone.config.JwtTokenProvider;
+import com.example.allone.models.Contacto;
 import com.example.allone.models.Usuario;
 import com.example.allone.models.UsuarioGoogle;
+import com.example.allone.repositories.ContactoRepository;
 import com.example.allone.repositories.UsuarioGoogleRepository;
 import com.example.allone.repositories.UsuarioRepository;
 import jakarta.transaction.Transactional;
@@ -59,6 +61,9 @@ public class UsuarioController {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private ContactoRepository contactoRepository;
+
     @GetMapping("/usuarios")
     public ResponseEntity<List<Map<String, Object>>> getUsuariosSimplificados() {
         List<Map<String, Object>> usuariosSimplificados = userRepository.findAll().stream()
@@ -89,6 +94,99 @@ public class UsuarioController {
 
         return ResponseEntity.ok(usuariosSimplificados);
     }
+
+    @PutMapping("/contactos/{idContacto}/aceptar")
+    public ResponseEntity<String> aceptarContacto(
+            @PathVariable Long idContacto,
+            @RequestParam boolean aceptar
+    ) {
+        Contacto solicitud = contactoRepository.findById(idContacto).orElseThrow();
+
+        if (aceptar) {
+            solicitud.setAceptado(true);
+            contactoRepository.save(solicitud);
+            return ResponseEntity.ok("Contacto agregado");
+        } else {
+            contactoRepository.delete(solicitud);
+            return ResponseEntity.ok("Solicitud rechazada");
+        }
+    }
+
+    @GetMapping("/usuarios/{userId}/solicitudes-pendientes")
+    public ResponseEntity<List<Map<String, Object>>> getSolicitudesPendientes(
+            @PathVariable Long userId
+    ) {
+        // 1. Obtener solicitudes donde el usuario actual es el destinatario
+        List<Contacto> solicitudes = contactoRepository.findByContactoIdAndAceptadoFalse(userId);
+
+        // 2. Mapear a formato JSON
+        List<Map<String, Object>> response = solicitudes.stream()
+                .map(solicitud -> {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("solicitudId", solicitud.getId());
+                    map.put("usuarioId", solicitud.getUsuario().getId());
+                    map.put("nombre", solicitud.getUsuario().getNombre());
+                    map.put("username", solicitud.getUsuario().getUsername());
+                    map.put("avatar", solicitud.getUsuario().getAvatar());
+                    return map;
+                })
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/usuarios/{idUsuario}/contactos")
+    public ResponseEntity<List<Map<String, Object>>> getContactos(
+            @PathVariable Long idUsuario
+    ) {
+        Usuario usuario = userRepository.findById(idUsuario).orElseThrow();
+
+        List<Contacto> contactos = contactoRepository.findByUsuarioAndAceptadoTrue(usuario);
+
+        List<Map<String, Object>> response = contactos.stream()
+                .map(c -> {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("id", c.getContacto().getId());
+                    map.put("name", c.getContacto().getNombre());
+                    map.put("username", c.getContacto().getUsername());
+                    map.put("avatar", c.getContacto().getAvatar());
+                    return map;
+                })
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/usuarios/{idUsuario}/agregar-contacto/{idContacto}")
+    public ResponseEntity<String> enviarSolicitud(
+            @PathVariable Long idUsuario,
+            @PathVariable Long idContacto
+    ) {
+        // 1. Verifica que el usuario de origen y el de destino existen y que no sea una solicitud duplicada.
+        // 2. Crea una nueva entidad "Contacto" con aceptado = false
+        // 3. Guarda la solicitud en la base de datos.
+        // 4. Retorna un mensaje de éxito o error.
+
+        // Ejemplo simplificado:
+        Usuario usuarioOrigen = userRepository.findById(idUsuario)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        Usuario usuarioDestino = userRepository.findById(idContacto)
+                .orElseThrow(() -> new RuntimeException("Usuario destino no encontrado"));
+
+        // Asumiendo que tienes un método para buscar si ya existe solicitud
+        if (contactoRepository.existsByUsuarioAndContacto(usuarioOrigen, usuarioDestino)) {
+            return ResponseEntity.badRequest().body("Ya existe una solicitud pendiente o ya son contactos");
+        }
+
+        Contacto nuevaSolicitud = new Contacto();
+        nuevaSolicitud.setUsuario(usuarioOrigen);
+        nuevaSolicitud.setContacto(usuarioDestino);
+        nuevaSolicitud.setAceptado(false);
+
+        contactoRepository.save(nuevaSolicitud);
+        return ResponseEntity.ok("Solicitud enviada correctamente");
+    }
+
 
     @Transactional
     @PostMapping(value = "/api/v1/auth/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
