@@ -27,7 +27,7 @@ public class UsuarioGoogleController {
     private JwtTokenProvider jwtTokenProvider;
 
     @GetMapping("/decode-jwt")
-    public ResponseEntity<Map<String, String>> getAvatar(@RequestHeader("Authorization") String authHeader){
+    public ResponseEntity<Map<String, ?>> getAvatar(@RequestHeader("Authorization") String authHeader){
         // 1. Extraer el token del header (eliminar "Bearer ")
         String jwtToken = authHeader.replace("Bearer ", "");
 
@@ -41,7 +41,7 @@ public class UsuarioGoogleController {
                 .getPayload();
 
         if (claims.get("id") != null){
-            return ResponseEntity.ok().body(Map.of("avatar", "http://localhost:8080/uploads/avatars/" + claims.get("avatar", String.class)));
+            return ResponseEntity.ok().body(Map.of("avatar", "http://localhost:8080/uploads/avatars/" + claims.get("avatar", String.class), "id", claims.get("id")));
         }
         return ResponseEntity.ok().body(Map.of("avatar", claims.get("avatar", String.class)));
     }

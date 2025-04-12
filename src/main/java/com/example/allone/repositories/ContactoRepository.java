@@ -12,4 +12,6 @@ public interface ContactoRepository extends JpaRepository<Contacto, Long> {
     List<Contacto> findByUsuarioAndAceptadoTrue(Usuario usuario);
 
     boolean existsByUsuarioAndContacto(Usuario usuarioOrigen, Usuario usuarioDestino);
+
+    List<Contacto> findByUsuarioId(Long userId);
 }

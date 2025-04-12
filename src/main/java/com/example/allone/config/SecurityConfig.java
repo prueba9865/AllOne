@@ -61,7 +61,7 @@ public class SecurityConfig {
         http.csrf(csrf -> csrf.disable())
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/v1/auth/**", "/decode-jwt", "/uploads/avatars/**", "/usuarios/**", "/contactos/**").permitAll()  // Permitir login y registro
+                        .requestMatchers("/api/v1/auth/**", "/decode-jwt", "/uploads/avatars/**", "/usuarios/**", "/contactos/**", "/solicitudes/**").permitAll()  // Permitir login y registro
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2

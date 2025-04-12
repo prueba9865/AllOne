@@ -5,6 +5,7 @@ import com.example.allone.DTO.LoginResponseDTO;
 import com.example.allone.DTO.UserRegisterDTO;
 import com.example.allone.DTO.UsuarioDTO;
 import com.example.allone.config.JwtTokenProvider;
+import com.example.allone.errors.ResourceNotFoundException;
 import com.example.allone.models.Contacto;
 import com.example.allone.models.Usuario;
 import com.example.allone.models.UsuarioGoogle;
@@ -112,6 +113,59 @@ public class UsuarioController {
         }
     }
 
+    @PutMapping("/solicitudes/{solicitudId}/responder")
+    public ResponseEntity<?> responderSolicitud(
+            @PathVariable Long solicitudId,
+            @RequestParam boolean aceptar) {
+
+        try {
+            // 1. Verificar y decodificar el token JWT
+            //String jwt = token.replace("Bearer ", "");
+            // Aquí necesitas tu lógica para decodificar el JWT
+            // Long userId = jwtUtil.getUserIdFromToken(jwt);
+
+            // 2. Buscar la solicitud
+            Contacto solicitud = contactoRepository.findById(solicitudId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Solicitud no encontrada"));
+
+            // 3. Verificar que el usuario actual es el destinatario
+            // if (!solicitud.getContacto().getId().equals(userId)) {
+            //     return ResponseEntity.status(HttpStatus.FORBIDDEN).body("No autorizado");
+            // }
+
+            // 4. Procesar la respuesta
+            if (aceptar) {
+                solicitud.setAceptado(true);
+                contactoRepository.save(solicitud);
+
+                // Opcional: Crear la relación inversa si es bidireccional
+                // Contacto relacionInversa = new Contacto();
+                // relacionInversa.setUsuario(solicitud.getContacto());
+                // relacionInversa.setContacto(solicitud.getUsuario());
+                // relacionInversa.setAceptado(true);
+                // contactoRepository.save(relacionInversa);
+
+                return ResponseEntity.ok().body(Map.of(
+                        "mensaje", "Solicitud aceptada",
+                        "solicitudId", solicitudId
+                ));
+            } else {
+                contactoRepository.delete(solicitud);
+                return ResponseEntity.ok().body(Map.of(
+                        "mensaje", "Solicitud rechazada",
+                        "solicitudId", solicitudId
+                ));
+            }
+
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Error al procesar la solicitud"));
+        }
+    }
+
     @GetMapping("/usuarios/{userId}/solicitudes-pendientes")
     public ResponseEntity<List<Map<String, Object>>> getSolicitudesPendientes(
             @PathVariable Long userId
@@ -127,7 +181,28 @@ public class UsuarioController {
                     map.put("usuarioId", solicitud.getUsuario().getId());
                     map.put("nombre", solicitud.getUsuario().getNombre());
                     map.put("username", solicitud.getUsuario().getUsername());
-                    map.put("avatar", solicitud.getUsuario().getAvatar());
+                    map.put("avatar", "http://localhost:8080/uploads/avatars/" + solicitud.getUsuario().getAvatar());
+                    return map;
+                })
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/usuarios/{userId}/solicitudes-enviadas")
+    public ResponseEntity<List<Map<String, Object>>> getSolicitudesEnviadas(
+            @PathVariable Long userId
+    ) {
+        List<Contacto> solicitudes = contactoRepository.findByUsuarioId(userId);
+
+        List<Map<String, Object>> response = solicitudes.stream()
+                .map(solicitud -> {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("id", solicitud.getId());
+                    map.put("name", solicitud.getContacto().getNombre());
+                    map.put("username", solicitud.getContacto().getUsername());
+                    map.put("avatar", "http://localhost:8080/uploads/avatars/" + solicitud.getContacto().getAvatar());
+                    map.put("aceptado", solicitud.isAceptado());
                     return map;
                 })
                 .collect(Collectors.toList());
@@ -149,7 +224,7 @@ public class UsuarioController {
                     map.put("id", c.getContacto().getId());
                     map.put("name", c.getContacto().getNombre());
                     map.put("username", c.getContacto().getUsername());
-                    map.put("avatar", c.getContacto().getAvatar());
+                    map.put("avatar", "http://localhost:8080/uploads/avatars/" + c.getContacto().getAvatar());
                     return map;
                 })
                 .collect(Collectors.toList());
