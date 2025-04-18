@@ -210,26 +210,20 @@ public class UsuarioController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/usuarios/{idUsuario}/contactos")
-    public ResponseEntity<List<Map<String, Object>>> getContactos(
-            @PathVariable Long idUsuario
-    ) {
-        Usuario usuario = userRepository.findById(idUsuario).orElseThrow();
+    @GetMapping("/usuarios/{id}/contactos")
+    public ResponseEntity<List<Usuario>> getContactos(@PathVariable Long id) {
+        // 1. Obtener contactos donde el usuario es el emisor (usuario_id = id)
+        List<Contacto> contactosComoEmisor = contactoRepository.findByUsuarioIdAndAceptadoTrue(id);
 
-        List<Contacto> contactos = contactoRepository.findByUsuarioAndAceptadoTrue(usuario);
+        // 2. Obtener contactos donde el usuario es el receptor (contacto_id = id)
+        List<Contacto> contactosComoReceptor = contactoRepository.findByContactoIdAndAceptadoTrue(id);
 
-        List<Map<String, Object>> response = contactos.stream()
-                .map(c -> {
-                    Map<String, Object> map = new HashMap<>();
-                    map.put("id", c.getContacto().getId());
-                    map.put("name", c.getContacto().getNombre());
-                    map.put("username", c.getContacto().getUsername());
-                    map.put("avatar", "http://localhost:8080/uploads/avatars/" + c.getContacto().getAvatar());
-                    return map;
-                })
-                .collect(Collectors.toList());
+        // 3. Combinar y eliminar duplicados
+        Set<Usuario> contactosUnicos = new HashSet<>();
+        contactosComoEmisor.forEach(c -> contactosUnicos.add(c.getContacto()));
+        contactosComoReceptor.forEach(c -> contactosUnicos.add(c.getUsuario()));
 
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(new ArrayList<>(contactosUnicos));
     }
 
     @PostMapping("/usuarios/{idUsuario}/agregar-contacto/{idContacto}")
@@ -237,26 +231,21 @@ public class UsuarioController {
             @PathVariable Long idUsuario,
             @PathVariable Long idContacto
     ) {
-        // 1. Verifica que el usuario de origen y el de destino existen y que no sea una solicitud duplicada.
-        // 2. Crea una nueva entidad "Contacto" con aceptado = false
-        // 3. Guarda la solicitud en la base de datos.
-        // 4. Retorna un mensaje de éxito o error.
-
-        // Ejemplo simplificado:
         Usuario usuarioOrigen = userRepository.findById(idUsuario)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
         Usuario usuarioDestino = userRepository.findById(idContacto)
                 .orElseThrow(() -> new RuntimeException("Usuario destino no encontrado"));
 
-        // Asumiendo que tienes un método para buscar si ya existe solicitud
+        // Verifica si ya existe una solicitud (en cualquier dirección)
         if (contactoRepository.existsByUsuarioAndContacto(usuarioOrigen, usuarioDestino)) {
             return ResponseEntity.badRequest().body("Ya existe una solicitud pendiente o ya son contactos");
         }
 
-        Contacto nuevaSolicitud = new Contacto();
-        nuevaSolicitud.setUsuario(usuarioOrigen);
-        nuevaSolicitud.setContacto(usuarioDestino);
-        nuevaSolicitud.setAceptado(false);
+        Contacto nuevaSolicitud = Contacto.builder()
+                .usuario(usuarioOrigen)
+                .contacto(usuarioDestino)
+                .aceptado(false)
+                .build();
 
         contactoRepository.save(nuevaSolicitud);
         return ResponseEntity.ok("Solicitud enviada correctamente");
