@@ -10,9 +10,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 @Entity
 @Data
@@ -52,6 +50,9 @@ public class Usuario implements UserDetails {
 
     @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Mensaje> mensajes = new ArrayList<>();
+
+    @ManyToMany(mappedBy = "participantes")
+    private Set<Chat> chats = new HashSet<>();
 
     @PrePersist
     public void prePersist() {
