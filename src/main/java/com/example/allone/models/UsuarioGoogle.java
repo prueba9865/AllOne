@@ -52,8 +52,8 @@ public class UsuarioGoogle implements UserDetails {
     @Column(name = "created_at", columnDefinition = "TIMESTAMP(0)")  // Asegura que se almacene sin microsegundos
     private LocalDateTime createdAt;
 
-    @OneToMany(mappedBy = "usuarioGoogle", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Mensaje> mensajes = new ArrayList<>();
+    /*@OneToMany(mappedBy = "usuarioGoogle", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Mensaje> mensajes = new ArrayList<>();*/
 
     @PrePersist
     public void prePersist() {

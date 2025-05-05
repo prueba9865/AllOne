@@ -1,5 +1,6 @@
 package com.example.allone.models;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -20,17 +21,23 @@ public class Mensaje {
     private String tipo; // texto, imagen o video
     private LocalDateTime createdAt;
 
-    @ManyToOne
+    /*@ManyToOne
     @JoinColumn(name = "chat_id", nullable = false) // 🔴 Define la clave foránea correctamente
-    private Chat chat;
+    private Chat chat;*/
 
     @ManyToOne
     @JoinColumn(name = "usuario_id", nullable = false)
+    @JsonBackReference // ← Anotación clave aquí (evita que se serialice el usuario dentro de mensaje
     private Usuario usuario;
 
     @ManyToOne
+    @JoinColumn(name = "contacto_id", nullable = false)
+    @JsonBackReference // ← Anotación clave aquí (evita que se serialice el usuario dentro de mensaje
+    private Usuario contacto;
+
+    /*@ManyToOne
     @JoinColumn(name = "usuario_google_id", nullable = false)
-    private UsuarioGoogle usuarioGoogle;
+    private UsuarioGoogle usuarioGoogle;*/
 
     @PrePersist
     public void prePersist() {

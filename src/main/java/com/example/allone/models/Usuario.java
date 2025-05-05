@@ -1,5 +1,6 @@
 package com.example.allone.models;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.*;
@@ -49,10 +50,11 @@ public class Usuario implements UserDetails {
     private LocalDateTime createdAt;
 
     @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference // ← Anotación clave aquí (permite serializar los mensajes)
     private List<Mensaje> mensajes = new ArrayList<>();
 
-    @ManyToMany(mappedBy = "participantes")
-    private Set<Chat> chats = new HashSet<>();
+    /*@ManyToMany(mappedBy = "participantes")
+    private Set<Chat> chats = new HashSet<>();*/
 
     @PrePersist
     public void prePersist() {

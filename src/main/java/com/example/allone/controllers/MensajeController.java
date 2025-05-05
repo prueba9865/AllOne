@@ -11,21 +11,21 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/chats/{chatId}/messages")
+@RequestMapping("/api/user/{usuarioId}/messages")
 public class MensajeController {
     @Autowired
     private MensajeService service;
 
     @GetMapping
-    public List<Mensaje> getMensajes(@PathVariable Long chatId) {
-        return service.listarMensajes(chatId);
+    public List<Mensaje> getMensajesByUsuario(@PathVariable Long usuarioId) {  // Cambia el parámetro
+        return service.listarMensajesByUsuario(usuarioId);  // Cambia el método del servicio
     }
 
     @PostMapping
     public ResponseEntity<Mensaje> postMensaje(
-            @PathVariable Long chatId,
+            @PathVariable Long usuarioId,
             @RequestBody MensajeDTO dto) {
-        Mensaje creado = service.enviarMensaje(chatId, dto);
+        Mensaje creado = service.enviarMensaje(usuarioId, dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(creado);
     }
 }

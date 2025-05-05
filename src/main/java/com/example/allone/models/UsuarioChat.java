@@ -18,9 +18,9 @@ public class UsuarioChat {
     private String rolGrupo;
     private LocalDateTime joinedAt;
 
-    @ManyToOne
+    /*@ManyToOne
     @JoinColumn(name = "chat_id", nullable = false) // 🔴 Define la clave foránea
-    private Chat chat;
+    private Chat chat;*/
 
     @ManyToOne
     @JoinColumn(name = "usuario_id", nullable = false)
