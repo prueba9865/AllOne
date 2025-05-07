@@ -11,14 +11,14 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/user/{usuarioId}/messages")
+@RequestMapping("/api/user/{usuarioId}/{contactoId}/messages")
 public class MensajeController {
     @Autowired
     private MensajeService service;
 
     @GetMapping
-    public List<Mensaje> getMensajesByUsuario(@PathVariable Long usuarioId) {  // Cambia el parámetro
-        return service.listarMensajesByUsuario(usuarioId);  // Cambia el método del servicio
+    public List<Mensaje> getMensajesByUsuario(@PathVariable Long usuarioId, @PathVariable Long contactoId) {  // Cambia el parámetro
+        return service.listarMensajesByUsuario(usuarioId, contactoId);  // Cambia el método del servicio
     }
 
     @PostMapping

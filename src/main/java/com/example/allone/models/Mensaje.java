@@ -1,6 +1,7 @@
 package com.example.allone.models;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -42,5 +43,12 @@ public class Mensaje {
     @PrePersist
     public void prePersist() {
         this.createdAt = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS); // Truncado a segundos
+    }
+
+    // Expone usuarioId en el JSON para poder obtener y verificar si es "mine" o "their" para los estilos del css y que apareza a la izq o a la derecha el mensaje
+    // en el div:
+    @JsonProperty("usuarioId")
+    public Long getUsuarioId() {
+        return usuario != null ? usuario.getId() : null;
     }
 }

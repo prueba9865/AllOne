@@ -19,8 +19,8 @@ public class MensajeService {
     @Autowired private UsuarioRepository userRepo;
     @Autowired private UsuarioGoogleRepository gUserRepo;
 
-    public List<Mensaje> listarMensajesByUsuario(Long usuarioId) {
-        return repo.findByUsuarioIdOrderByCreatedAtAsc(usuarioId);  // Nuevo método del repositorio
+    public List<Mensaje> listarMensajesByUsuario(Long usuarioId, Long contactoId) {
+        return repo.findConversacionBetweenUsers(usuarioId, contactoId);  // Nuevo método del repositorio
     }
 
     public Mensaje enviarMensaje(Long usuarioId, MensajeDTO dto) {
