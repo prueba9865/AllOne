@@ -1,9 +1,6 @@
 package com.example.allone.controllers;
 
-import com.example.allone.DTO.LoginRequestDTO;
-import com.example.allone.DTO.LoginResponseDTO;
-import com.example.allone.DTO.UserRegisterDTO;
-import com.example.allone.DTO.UsuarioDTO;
+import com.example.allone.DTO.*;
 import com.example.allone.config.JwtTokenProvider;
 import com.example.allone.errors.ResourceNotFoundException;
 import com.example.allone.models.Contacto;
@@ -12,6 +9,7 @@ import com.example.allone.models.UsuarioGoogle;
 import com.example.allone.repositories.ContactoRepository;
 import com.example.allone.repositories.UsuarioGoogleRepository;
 import com.example.allone.repositories.UsuarioRepository;
+import com.example.allone.services.UsuarioService;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import net.coobird.thumbnailator.Thumbnails;
@@ -29,6 +27,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.multipart.MultipartFile;
@@ -63,7 +62,39 @@ public class UsuarioController {
     private PasswordEncoder passwordEncoder;
 
     @Autowired
+    private UsuarioService usuarioService;
+
+    @Autowired
     private ContactoRepository contactoRepository;
+
+    @GetMapping("/api/v1/usuario/edit/{usuarioId}")
+    public ResponseEntity<UsuarioDTO> getUsuarioParaEditar(@PathVariable Long usuarioId) {
+        UsuarioDTO usuarioDTO = usuarioService.obtenerUsuarioParaEditar(usuarioId);
+        return ResponseEntity.ok(usuarioDTO);
+    }
+
+    @PutMapping("/api/v1/usuario/edit/{usuarioId}")
+    public ResponseEntity<?> actualizarUsuario(
+            @PathVariable Long usuarioId,
+            @Valid @RequestBody UsuarioEditDTO usuarioEditDTO,
+            BindingResult result) {
+
+        if (result.hasErrors()) {
+            Map<String, String> errores = new HashMap<>();
+            result.getFieldErrors().forEach(err -> {
+                errores.put(err.getField(), err.getDefaultMessage());
+            });
+            return ResponseEntity.badRequest().body(errores);
+        }
+
+        Usuario usuarioActualizado = usuarioService.actualizarUsuario(usuarioId, usuarioEditDTO);
+        return ResponseEntity.ok(Map.of("success", "Usuario editado correctamente"));
+    }
+
+    @DeleteMapping("/api/v1/usuario/delete/{usuarioId}")
+    public ResponseEntity<?> eliminarUsuario(@PathVariable Long usuarioId){
+        return usuarioService.eliminarUsuario(usuarioId);
+    }
 
     @GetMapping("/usuarios")
     public ResponseEntity<List<Map<String, Object>>> getUsuariosSimplificados() {
