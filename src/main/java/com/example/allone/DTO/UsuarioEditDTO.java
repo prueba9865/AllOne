@@ -1,13 +1,11 @@
 package com.example.allone.DTO;
 
 import jakarta.persistence.Column;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import org.springframework.web.multipart.MultipartFile;
 
 @Data
 @AllArgsConstructor
@@ -22,7 +20,13 @@ public class UsuarioEditDTO {
     @NotBlank(message = "El email no puede estar en blanco")
     private String email;
 
-    private String avatar;
+    @Column(unique = true)
+    @NotBlank(message = "El usuario no puede estar en blanco")
+    @Size(min = 3, max = 20, message = "El username debe tener entre 3 y 20 caracteres")
+    @Pattern(regexp = "^[a-zA-Z0-9_.-]{3,20}$", message = "El username solo puede contener letras, números, puntos, guiones y guiones bajos")
+    private String username;
+
+    private MultipartFile avatar;
 
     private String antiguaPassword;
 

@@ -41,7 +41,8 @@ public class UsuarioGoogleController {
                 .getPayload();
 
         if (claims.get("id") != null){
-            return ResponseEntity.ok().body(Map.of("avatar", "http://localhost:8080/uploads/avatars/" + claims.get("avatar", String.class), "id", claims.get("id")));
+            return ResponseEntity.ok().body(Map.of("avatar", "http://localhost:8080/uploads/avatars/" + claims.get("avatar", String.class), "id", claims.get("id"),
+                    "nombre", claims.get("name"), "email", claims.get("email"), "username", claims.get("username")));
         }
         return ResponseEntity.ok().body(Map.of("avatar", claims.get("avatar", String.class)));
     }

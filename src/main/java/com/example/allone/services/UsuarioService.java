@@ -32,38 +32,53 @@ public class UsuarioService {
                 .build();
     }
 
-    public Usuario actualizarUsuario(Long usuarioId, UsuarioEditDTO usuarioEditDTO) {
-        Usuario usuario = usuarioRepository.findById(usuarioId)
+    // Servicio
+    public Usuario actualizarUsuario(Long usuarioId, UsuarioEditDTO dto ,String nombreArchivo) {
+        Usuario u = usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        // Verificar contraseña antigua (usando PasswordEncoder)
-        if (usuarioEditDTO.getAntiguaPassword() != null && !usuarioEditDTO.getAntiguaPassword().isEmpty()) {
-            if (!passwordEncoder.matches(usuarioEditDTO.getAntiguaPassword(), usuario.getPassword())) {
-                throw new RuntimeException("La contraseña antigua no coincide con la actual");
+        // 1) Verificación de antiguaPassword
+        if (dto.getAntiguaPassword() != null && !dto.getAntiguaPassword().isEmpty()) {
+            if (!passwordEncoder.matches(dto.getAntiguaPassword(), u.getPassword())) {
+                throw new RuntimeException("La contraseña antigua no coincide");
             }
         }
 
-        // Validar que las nuevas contraseñas coincidan
-        if (usuarioEditDTO.getPassword() != null && !usuarioEditDTO.getPassword().isEmpty()) {
-            if (!usuarioEditDTO.getPassword().equals(usuarioEditDTO.getPassword2())) {
+        if(passwordEncoder.matches(dto.getPassword(), u.getPassword())){
+            throw new RuntimeException("La contraseña nueva tiene que ser diferente a la actual");
+        }
+
+        // 2) Cambio de contraseña
+        if (dto.getPassword() != null && !dto.getPassword().isEmpty()) {
+            if (!dto.getPassword().equals(dto.getPassword2())) {
                 throw new RuntimeException("Las nuevas contraseñas no coinciden");
             }
-            usuario.setPassword(passwordEncoder.encode(usuarioEditDTO.getPassword()));
+            u.setPassword(passwordEncoder.encode(dto.getPassword()));
         }
 
-        // Validar email único
-        if (!usuario.getEmail().equals(usuarioEditDTO.getEmail())) {
-            if (usuarioRepository.existsByEmail(usuarioEditDTO.getEmail())) {
-                throw new RuntimeException("El email ya está en uso");
+        // 3) Validación de email
+        if (!u.getEmail().equals(dto.getEmail()) &&
+                usuarioRepository.existsByEmail(dto.getEmail())) {
+            throw new RuntimeException("El email ya está en uso");
+        }
+        u.setEmail(dto.getEmail());
+
+        // Validar username único
+        if (!u.getUsername().equals(dto.getUsername())) {
+            if (usuarioRepository.existsByUsername(dto.getUsername())) {
+                throw new RuntimeException("El nombre de usuario ya está en uso");
             }
-            usuario.setEmail(usuarioEditDTO.getEmail());
+            u.setUsername(dto.getUsername());
         }
 
-        usuario.setNombre(usuarioEditDTO.getNombre());
-        usuario.setAvatar(usuarioEditDTO.getAvatar());
+        // 4) Resto de campos
+        u.setNombre(dto.getNombre());
+        u.setAvatar(nombreArchivo);   // aquí ya es solo el nombre de fichero
+        // u.setTipo(dto.getTipo());     // si lo necesitas
 
-        return usuarioRepository.save(usuario);
+        return usuarioRepository.save(u);
     }
+
 
     public ResponseEntity<Map<String,String>> eliminarUsuario(Long usuarioId){
         if(!usuarioRepository.findById(usuarioId).isPresent()){

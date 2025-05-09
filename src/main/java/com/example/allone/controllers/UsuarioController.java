@@ -73,23 +73,31 @@ public class UsuarioController {
         return ResponseEntity.ok(usuarioDTO);
     }
 
-    @PutMapping("/api/v1/usuario/edit/{usuarioId}")
+    // Controlador
+    @PutMapping(value = "/api/v1/usuario/edit/{usuarioId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> actualizarUsuario(
             @PathVariable Long usuarioId,
-            @Valid @RequestBody UsuarioEditDTO usuarioEditDTO,
-            BindingResult result) {
+            @Valid @ModelAttribute UsuarioEditDTO dto,
+            BindingResult result, WebRequest request) {
+
+        // 2. Guardar la imagen
+        String nombreArchivo = guardarFotos(dto.getAvatar());
+
+        // 🔹 Establecer el nombre del archivo en el request (para limpieza en caso de error)
+        request.setAttribute("nombreArchivo", nombreArchivo, WebRequest.SCOPE_REQUEST);
 
         if (result.hasErrors()) {
             Map<String, String> errores = new HashMap<>();
-            result.getFieldErrors().forEach(err -> {
-                errores.put(err.getField(), err.getDefaultMessage());
-            });
+            result.getFieldErrors().forEach(err ->
+                    errores.put(err.getField(), err.getDefaultMessage())
+            );
             return ResponseEntity.badRequest().body(errores);
         }
 
-        Usuario usuarioActualizado = usuarioService.actualizarUsuario(usuarioId, usuarioEditDTO);
+        Usuario actualizado = usuarioService.actualizarUsuario(usuarioId, dto, nombreArchivo);
         return ResponseEntity.ok(Map.of("success", "Usuario editado correctamente"));
     }
+
 
     @DeleteMapping("/api/v1/usuario/delete/{usuarioId}")
     public ResponseEntity<?> eliminarUsuario(@PathVariable Long usuarioId){
