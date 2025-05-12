@@ -4,6 +4,7 @@ import jakarta.servlet.http.Cookie;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -41,9 +42,9 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:5500", "http://127.0.0.1:5500/")); // Permitir orígenes específicos
+        config.setAllowedOrigins(List.of("http://localhost:5500", "http://127.0.0.1:5500")); // Permitir orígenes específicos
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS")); // Métodos permitidos
-        config.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With", "Cache-Control")); // Encabezados permitidos
+        config.setAllowedHeaders(List.of("*")); // Encabezados permitidos
         config.setAllowCredentials(true); // Permitir credenciales
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
@@ -61,6 +62,7 @@ public class SecurityConfig {
         http.csrf(csrf -> csrf.disable())
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/v1/auth/**", "/decode-jwt", "/uploads/avatars/**", "/usuarios/**", "/contactos/**", "/solicitudes/**", "/api/**").permitAll()  // Permitir login y registro
                         .anyRequest().authenticated()
                 )
@@ -77,7 +79,7 @@ public class SecurityConfig {
                         })
                 )
 
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+                //.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                 // Stateless para JWT
                 .logout(logout -> logout
                         .logoutSuccessUrl("/")

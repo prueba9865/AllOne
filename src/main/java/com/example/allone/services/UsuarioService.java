@@ -9,8 +9,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -80,11 +85,37 @@ public class UsuarioService {
     }
 
 
-    public ResponseEntity<Map<String,String>> eliminarUsuario(Long usuarioId){
-        if(!usuarioRepository.findById(usuarioId).isPresent()){
+    public ResponseEntity<Map<String,String>> eliminarUsuario(Long usuarioId) {
+        // Verificar si el usuario existe
+        Optional<Usuario> usuarioOptional = usuarioRepository.findById(usuarioId);
+        if(!usuarioOptional.isPresent()) {
             return ResponseEntity.ok(Map.of("error", "El ID no existe"));
         }
-        usuarioRepository.deleteById(usuarioId);
-        return ResponseEntity.ok(Map.of("success", "Usuario eliminado correctamente"));
+
+        Usuario usuario = usuarioOptional.get();
+
+        try {
+            // Eliminar el avatar si existe
+            String avatarPath = usuario.getAvatar();
+            if(avatarPath != null && !avatarPath.isEmpty()) {
+                // Extraer el nombre del archivo de la URL
+                String fileName = avatarPath.substring(avatarPath.lastIndexOf("/") + 1);
+
+                // Construir la ruta completa en el servidor
+                Path filePath = Paths.get("uploads/avatars").resolve(fileName).toAbsolutePath();
+
+                // Eliminar el archivo
+                Files.deleteIfExists(filePath);
+            }
+
+            // Eliminar el usuario
+            usuarioRepository.deleteById(usuarioId);
+
+            return ResponseEntity.ok(Map.of("success", "Usuario eliminado correctamente"));
+        } catch (IOException e) {
+            // Si hay error al eliminar el archivo, igual eliminamos el usuario
+            usuarioRepository.deleteById(usuarioId);
+            return ResponseEntity.ok(Map.of("warning", "Usuario eliminado pero no se pudo borrar su avatar: " + e.getMessage()));
+        }
     }
 }
