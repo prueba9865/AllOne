@@ -4,6 +4,7 @@ import com.example.allone.DTO.UsuarioDTO;
 import com.example.allone.DTO.UsuarioEditDTO;
 import com.example.allone.models.Usuario;
 import com.example.allone.repositories.UsuarioRepository;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -82,6 +83,38 @@ public class UsuarioService {
         // u.setTipo(dto.getTipo());     // si lo necesitas
 
         return usuarioRepository.save(u);
+    }
+
+    public Usuario actualizarUsuarioParcial(Long usuarioId, UsuarioEditDTO dto, String nombreArchivo) {
+        Usuario usuario = usuarioRepository.findById(usuarioId)
+                .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado"));
+
+        // Actualizar solo los campos que vienen en el DTO
+        if (dto.getNombre() != null) {
+            usuario.setNombre(dto.getNombre());
+        }
+
+        if (dto.getEmail() != null) {
+            usuario.setEmail(dto.getEmail());
+        }
+
+        if (dto.getUsername() != null) {
+            usuario.setUsername(dto.getUsername());
+        }
+
+        if (nombreArchivo != null) {
+            usuario.setAvatar(nombreArchivo);
+        }
+
+        // Manejo especial para contraseña
+        if (dto.getPassword() != null && !dto.getPassword().isEmpty()) {
+            if (!passwordEncoder.matches(dto.getAntiguaPassword(), usuario.getPassword())) {
+                throw new SecurityException("La contraseña actual no es correcta");
+            }
+            usuario.setPassword(passwordEncoder.encode(dto.getPassword()));
+        }
+
+        return usuarioRepository.save(usuario);
     }
 
 

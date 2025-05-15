@@ -77,37 +77,48 @@ public class UsuarioController {
     }
 
     @PutMapping(value = "/api/v1/usuario/edit/{usuarioId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> actualizarUsuario(
+    public ResponseEntity<?> actualizarUsuarioParcial(
             @PathVariable Long usuarioId,
-            @Valid @ModelAttribute UsuarioEditDTO dto,
+            @ModelAttribute UsuarioEditDTO dto,
             BindingResult result,
             WebRequest request,
-            Authentication authentication) { // Añadir Authentication como parámetro
+            Authentication authentication) {
 
-        // 1. Validación de errores
-        if (result.hasErrors()) {
-            Map<String, String> errores = new HashMap<>();
-            result.getFieldErrors().forEach(err ->
-                    errores.put(err.getField(), err.getDefaultMessage())
-            );
-            return ResponseEntity.badRequest().body(errores);
+        // 1. Manejar la imagen si viene en la petición
+        String nombreArchivo = null;
+        if (dto.getAvatar() != null && !dto.getAvatar().isEmpty()) {
+            nombreArchivo = guardarFotos(dto.getAvatar());
+            request.setAttribute("nombreArchivo", nombreArchivo, WebRequest.SCOPE_REQUEST);
         }
 
-        // 2. Guardar la imagen
-        String nombreArchivo = guardarFotos(dto.getAvatar());
-        request.setAttribute("nombreArchivo", nombreArchivo, WebRequest.SCOPE_REQUEST);
+        // 2. Validar solo campos que vienen en el DTO
+        if (dto.getNombre() != null) {
+            if (dto.getNombre().isBlank()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "El nombre no puede estar vacío"));
+            }
+        }
 
-        // 3. Actualizar usuario
-        Usuario actualizado = usuarioService.actualizarUsuario(usuarioId, dto, nombreArchivo);
+        if (dto.getEmail() != null) {
+            // Validar formato email
+            if (!dto.getEmail().matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}$")) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Formato de email inválido"));
+            }
+        }
 
-        // 4. Generar nuevo token con los datos actualizados
+        // 3. Actualizar usuario (solo campos proporcionados)
+        Usuario usuarioActualizado = usuarioService.actualizarUsuarioParcial(usuarioId, dto, nombreArchivo);
+
+        // 4. Generar nuevo token
         String nuevoToken = jwtTokenProvider.generateToken(authentication);
 
         // 5. Construir respuesta
         Map<String, Object> response = new HashMap<>();
-        response.put("success", "Usuario editado correctamente");
-        response.put("token", nuevoToken); // Incluir el nuevo token en la respuesta
-        response.put("avatarUrl", "http://localhost:8080/uploads/avatars/" + actualizado.getAvatar()); // URL completa del avatar
+        response.put("success", "Usuario actualizado correctamente");
+        response.put("token", nuevoToken);
+
+        if (nombreArchivo != null) {
+            response.put("avatarUrl", "http://localhost:8080/uploads/avatars/" + usuarioActualizado.getAvatar());
+        }
 
         return ResponseEntity.ok(response);
     }
