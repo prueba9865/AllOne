@@ -1,5 +1,6 @@
 package com.example.allone.config;
 
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -29,39 +30,65 @@ public class JwtFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        String token = this.extractToken(request);
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain filterChain)
+            throws ServletException, IOException {
 
-        if (token != null && this.tokenProvider.isValidToken(token)) {
-            String username = this.tokenProvider.getUsernameFromToken(token);
+        try {
+            String token = this.extractToken(request);
 
-            // UserDetails representa al usuario
-            UserDetails user = this.userDetailsService.loadUserByUsername(username); // Carga el usuario de la base de datos
+            if (token != null) {
+                // Validar el token antes de procesarlo
+                if (!this.tokenProvider.isValidToken(token)) {
+                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token inválido o expirado");
+                    return;
+                }
 
-            // Información sobre el usuario que se acaba de autenticar
-            Authentication auth = new UsernamePasswordAuthenticationToken(
-                    user.getUsername(),
-                    user.getPassword(),
-                    user.getAuthorities());
+                String username = this.tokenProvider.getUsernameFromToken(token);
 
-            // SecurityContext permite ver o establecer un usuario logeado
-            SecurityContextHolder.getContext().setAuthentication(auth);
+                // Verificar que el username no sea nulo o vacío
+                if (username == null || username.isEmpty()) {
+                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token no contiene información de usuario válida");
+                    return;
+                }
+
+                // UserDetails representa al usuario
+                UserDetails user = this.userDetailsService.loadUserByUsername(username);
+
+                // Información sobre el usuario que se acaba de autenticar
+                Authentication auth = new UsernamePasswordAuthenticationToken(
+                        user,
+                        null, // No necesitamos las credenciales después de autenticar
+                        user.getAuthorities());
+
+                SecurityContextHolder.getContext().setAuthentication(auth);
+            }
+
+            // Reenviamos la petición a los siguientes filtros
+            filterChain.doFilter(request, response);
+
+        } catch (JwtException e) {
+            // Manejar específicamente errores JWT
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Error de autenticación: " + e.getMessage());
+        } catch (Exception e) {
+            // Manejar otros errores inesperados
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error interno del servidor");
         }
-
-        // Reenviamos la petición a los siguientes filtros
-        filterChain.doFilter(request, response);
     }
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
-        // Excluir el endpoint de registro y otros endpoints públicos
-        return request.getServletPath().startsWith("/api/v1/auth/");
+        // Excluir endpoints públicos
+        return request.getServletPath().startsWith("/api/v1/auth/") ||
+                request.getServletPath().equals("/decode-jwt") ||
+                request.getServletPath().startsWith("/uploads/avatars/");
     }
 
     public String extractToken(HttpServletRequest request) {
         String bearerToken = request.getHeader("Authorization");
         if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
-            return bearerToken.substring(7); // Quitamos el Bearer y nos quedamos con el token
+            return bearerToken.substring(7);
         }
         return null;
     }

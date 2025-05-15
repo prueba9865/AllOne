@@ -67,25 +67,24 @@ public class UsuarioController {
     @Autowired
     private ContactoRepository contactoRepository;
 
+    @Autowired
+    private JwtTokenProvider jwtTokenProvider;
+
     @GetMapping("/api/v1/usuario/edit/{usuarioId}")
     public ResponseEntity<UsuarioDTO> getUsuarioParaEditar(@PathVariable Long usuarioId) {
         UsuarioDTO usuarioDTO = usuarioService.obtenerUsuarioParaEditar(usuarioId);
         return ResponseEntity.ok(usuarioDTO);
     }
 
-    // Controlador
     @PutMapping(value = "/api/v1/usuario/edit/{usuarioId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> actualizarUsuario(
             @PathVariable Long usuarioId,
             @Valid @ModelAttribute UsuarioEditDTO dto,
-            BindingResult result, WebRequest request) {
+            BindingResult result,
+            WebRequest request,
+            Authentication authentication) { // Añadir Authentication como parámetro
 
-        // 2. Guardar la imagen
-        String nombreArchivo = guardarFotos(dto.getAvatar());
-
-        // 🔹 Establecer el nombre del archivo en el request (para limpieza en caso de error)
-        request.setAttribute("nombreArchivo", nombreArchivo, WebRequest.SCOPE_REQUEST);
-
+        // 1. Validación de errores
         if (result.hasErrors()) {
             Map<String, String> errores = new HashMap<>();
             result.getFieldErrors().forEach(err ->
@@ -94,8 +93,23 @@ public class UsuarioController {
             return ResponseEntity.badRequest().body(errores);
         }
 
+        // 2. Guardar la imagen
+        String nombreArchivo = guardarFotos(dto.getAvatar());
+        request.setAttribute("nombreArchivo", nombreArchivo, WebRequest.SCOPE_REQUEST);
+
+        // 3. Actualizar usuario
         Usuario actualizado = usuarioService.actualizarUsuario(usuarioId, dto, nombreArchivo);
-        return ResponseEntity.ok(Map.of("success", "Usuario editado correctamente"));
+
+        // 4. Generar nuevo token con los datos actualizados
+        String nuevoToken = jwtTokenProvider.generateToken(authentication);
+
+        // 5. Construir respuesta
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", "Usuario editado correctamente");
+        response.put("token", nuevoToken); // Incluir el nuevo token en la respuesta
+        response.put("avatarUrl", "http://localhost:8080/uploads/avatars/" + actualizado.getAvatar()); // URL completa del avatar
+
+        return ResponseEntity.ok(response);
     }
 
 

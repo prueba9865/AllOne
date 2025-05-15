@@ -3,6 +3,7 @@ package com.example.allone.config;
 import com.example.allone.models.Usuario;
 import com.example.allone.models.UsuarioGoogle;
 import com.example.allone.repositories.UsuarioGoogleRepository;
+import com.example.allone.repositories.UsuarioRepository;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtParser;
 import io.jsonwebtoken.Jwts;
@@ -11,6 +12,7 @@ import io.micrometer.common.util.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Component;
 
@@ -30,26 +32,32 @@ public class JwtTokenProvider {
     @Autowired
     private UsuarioGoogleRepository usuarioGoogleRepository;
 
+    @Autowired
+    private UsuarioRepository usuarioRepository;
+
     public SecretKey claveFirma(){
         return Keys.hmacShaKeyFor(SECRET_KEY.getBytes(StandardCharsets.UTF_8));
     }
 
     public String generateToken(Authentication authentication) {
-
+        // Obtener el usuario actualizado desde la base de datos
         Usuario user = (Usuario) authentication.getPrincipal();
+        Usuario freshUser = usuarioRepository.findById(user.getId())
+                .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado"));
+
         SecretKey key = Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
 
         return Jwts.builder()
-                .subject(Long.toString(user.getId()))
-                .claim("id", user.getId())
-                .claim("name", user.getNombre())
-                .claim("email", user.getEmail())
-                .claim("username", user.getUsername())
-                .claim("avatar", user.getAvatar())
-                .claim("rolUser", user.getRolUser())
+                .subject(Long.toString(freshUser.getId()))
+                .claim("id", freshUser.getId())
+                .claim("name", freshUser.getNombre())
+                .claim("email", freshUser.getEmail())
+                .claim("username", freshUser.getUsername())
+                .claim("avatar", freshUser.getAvatar())
+                .claim("rolUser", freshUser.getRolUser())
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
-                .signWith(key) // Firma con el algoritmo por defecto
+                .signWith(key)
                 .compact();
     }
 

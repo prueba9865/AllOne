@@ -59,13 +59,25 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http.csrf(csrf -> csrf.disable())
+        http
+                .csrf(csrf -> csrf.disable())
+                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Usa tu configuración CORS
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/api/v1/auth/**", "/decode-jwt", "/uploads/avatars/**", "/usuarios/**", "/contactos/**", "/solicitudes/**", "/api/**").permitAll()  // Permitir login y registro
+                        .requestMatchers(
+                                "/api/v1/auth/**",
+                                "/decode-jwt",
+                                "/uploads/avatars/**",
+                                "/usuarios/**",
+                                "/contactos/**",
+                                "/solicitudes/**",
+                                "/api/**"
+                        ).permitAll()
                         .anyRequest().authenticated()
                 )
+                // Mueve la configuración de OAuth2 después del filtro JWT
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .oauth2Login(oauth2 -> oauth2
                         .successHandler((request, response, authentication) -> {
                             String jwtToken = jwtTokenProvider.generateTokenGoogle(authentication);
@@ -74,18 +86,13 @@ public class SecurityConfig {
                             cookie.setSecure(true); // Solo HTTPS
                             cookie.setPath("/");
                             response.addCookie(cookie);
-                            // Redirigir al cliente a la página de bienvenida con el nombre en la URL
                             response.sendRedirect("/add");
                         })
                 )
-
-                //.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
-                // Stateless para JWT
                 .logout(logout -> logout
                         .logoutSuccessUrl("/")
                         .permitAll()
-                )
-                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class); // Filtro JWT para autenticación;
+                );
 
         return http.build();
     }
