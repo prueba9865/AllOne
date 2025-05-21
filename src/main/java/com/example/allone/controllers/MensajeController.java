@@ -11,22 +11,26 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/user/{usuarioId}/{contactoId}/messages")
 public class MensajeController {
     @Autowired
     private MensajeService service;
 
-    @GetMapping
+    @GetMapping("/api/user/{usuarioId}/{contactoId}/messages")
     public List<Mensaje> getMensajesByUsuario(@PathVariable Long usuarioId, @PathVariable Long contactoId) {  // Cambia el parámetro
         return service.listarMensajesByUsuario(usuarioId, contactoId);  // Cambia el método del servicio
     }
 
-    @PostMapping
+    @PostMapping("/api/user/{usuarioId}/{contactoId}/messages")
     public ResponseEntity<Mensaje> postMensaje(
             @PathVariable Long usuarioId,
             @RequestBody MensajeDTO dto) {
         Mensaje creado = service.enviarMensaje(usuarioId, dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(creado);
+    }
+
+    @DeleteMapping("/api/messages/{messageId}")
+    public ResponseEntity<?> eliminarMensaje(@PathVariable Long messageId){
+        return service.eliminarMensaje(messageId);
     }
 }
 
