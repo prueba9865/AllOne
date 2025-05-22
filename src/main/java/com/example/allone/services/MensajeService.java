@@ -57,4 +57,11 @@ public class MensajeService {
         repo.deleteById(messageId);
         return ResponseEntity.ok(Map.of("success", "Mensaje eliminado correctamente"));
     }
+
+    public Mensaje updateContenido(Long id, String nuevoContenido) {
+        Mensaje msg = repo.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Mensaje no encontrado: " + id));
+        msg.setContenido(nuevoContenido);
+        return repo.save(msg);
+    }
 }

@@ -1,5 +1,6 @@
 package com.example.allone.controllers;
 
+import com.example.allone.DTO.ActualizarMensajeDTO;
 import com.example.allone.DTO.MensajeDTO;
 import com.example.allone.models.Mensaje;
 import com.example.allone.services.MensajeService;
@@ -31,6 +32,16 @@ public class MensajeController {
     @DeleteMapping("/api/messages/{messageId}")
     public ResponseEntity<?> eliminarMensaje(@PathVariable Long messageId){
         return service.eliminarMensaje(messageId);
+    }
+
+    @PatchMapping("/api/messages/{messageId}")
+    public ResponseEntity<Mensaje> updateContenido(
+            @PathVariable Long messageId,
+            @RequestBody ActualizarMensajeDTO request
+    ) {
+        // Llama al servicio para actualizar solo el contenido
+        Mensaje updated = service.updateContenido(messageId, request.getContenido());
+        return ResponseEntity.ok(updated);
     }
 }
 
