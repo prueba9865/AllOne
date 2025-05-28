@@ -53,6 +53,10 @@ public class Usuario implements UserDetails {
     @JsonManagedReference // ← Anotación clave aquí (permite serializar los mensajes)
     private List<Mensaje> mensajes = new ArrayList<>();
 
+    @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference // ← Anotación clave aquí (permite serializar los mensajes)
+    private List<Mensaje> mensajesIA = new ArrayList<>();
+
     /*@ManyToMany(mappedBy = "participantes")
     private Set<Chat> chats = new HashSet<>();*/
 
