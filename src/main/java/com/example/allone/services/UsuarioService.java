@@ -14,7 +14,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -34,16 +33,15 @@ public class UsuarioService {
                 .nombre(usuario.getNombre())
                 .email(usuario.getEmail())
                 .avatar(usuario.getAvatar())
-                .tipo("local") // Asumimos que es local para edición
+                .tipo("local")
                 .build();
     }
 
-    // Servicio
     public Usuario actualizarUsuario(Long usuarioId, UsuarioEditDTO dto ,String nombreArchivo) {
         Usuario u = usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        // 1) Verificación de antiguaPassword
+        // Verificación de antiguaPassword
         if (dto.getAntiguaPassword() != null && !dto.getAntiguaPassword().isEmpty()) {
             if (!passwordEncoder.matches(dto.getAntiguaPassword(), u.getPassword())) {
                 throw new RuntimeException("La contraseña antigua no coincide");
@@ -54,7 +52,7 @@ public class UsuarioService {
             throw new RuntimeException("La contraseña nueva tiene que ser diferente a la actual");
         }
 
-        // 2) Cambio de contraseña
+        // Cambio de contraseña
         if (dto.getPassword() != null && !dto.getPassword().isEmpty()) {
             if (!dto.getPassword().equals(dto.getPassword2())) {
                 throw new RuntimeException("Las nuevas contraseñas no coinciden");
@@ -62,7 +60,7 @@ public class UsuarioService {
             u.setPassword(passwordEncoder.encode(dto.getPassword()));
         }
 
-        // 3) Validación de email
+        // Validación de email
         if (!u.getEmail().equals(dto.getEmail()) &&
                 usuarioRepository.existsByEmail(dto.getEmail())) {
             throw new RuntimeException("El email ya está en uso");
@@ -77,10 +75,9 @@ public class UsuarioService {
             u.setUsername(dto.getUsername());
         }
 
-        // 4) Resto de campos
+        // Resto de campos
         u.setNombre(dto.getNombre());
-        u.setAvatar(nombreArchivo);   // aquí ya es solo el nombre de fichero
-        // u.setTipo(dto.getTipo());     // si lo necesitas
+        u.setAvatar(nombreArchivo);
 
         return usuarioRepository.save(u);
     }

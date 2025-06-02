@@ -3,19 +3,12 @@ package com.example.allone.services;
 import com.example.allone.DTO.MensajeDTO;
 import com.example.allone.models.Mensaje;
 import com.example.allone.models.Usuario;
-import com.example.allone.models.UsuarioGoogle;
 import com.example.allone.repositories.MensajeRepository;
-import com.example.allone.repositories.UsuarioGoogleRepository;
 import com.example.allone.repositories.UsuarioRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -24,7 +17,6 @@ import java.util.Optional;
 public class MensajeService {
     @Autowired private MensajeRepository repo;
     @Autowired private UsuarioRepository userRepo;
-    @Autowired private UsuarioGoogleRepository gUserRepo;
 
     public List<Mensaje> listarMensajesByUsuario(Long usuarioId, Long contactoId) {
         return repo.findConversacionBetweenUsers(usuarioId, contactoId);  // Nuevo método del repositorio

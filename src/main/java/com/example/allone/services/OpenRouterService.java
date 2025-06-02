@@ -1,10 +1,5 @@
 package com.example.allone.services;
 
-import com.example.allone.models.ChatIA;
-import com.example.allone.repositories.ChatIARepository;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -18,9 +13,6 @@ import java.util.Map;
 
 @Service
 public class OpenRouterService {
-
-    @Autowired
-    private ChatIARepository repo;
 
     @Value("${openrouter.api.key}")
     private String apiKey;
@@ -50,10 +42,6 @@ public class OpenRouterService {
         Map<?,?> first = (Map<?,?>) choices.get(0);
         Map<?,?> message = (Map<?,?>) first.get("message");
 
-        /*ChatIA mensaje = ChatIA.builder()
-                .contenido((String) message.get("content")).build();
-
-        repo.save(mensaje);*/
         return (String) message.get("content");
     }
 }

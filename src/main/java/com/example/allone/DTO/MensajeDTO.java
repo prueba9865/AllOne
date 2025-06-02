@@ -15,7 +15,7 @@ import java.time.temporal.ChronoUnit;
 public class MensajeDTO {
     private String contenido;
     private String tipo;        // "texto", "imagen", etc.
-    private Long usuarioId;     // tu id de Usuario
+    private Long usuarioId;
     private Long contactoId;
     private LocalDateTime createdAt;
 
@@ -26,5 +26,4 @@ public class MensajeDTO {
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = this.createdAt = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
     }
-    //private Long usuarioGoogleId; // o null si usas sólo usuarios internos
 }

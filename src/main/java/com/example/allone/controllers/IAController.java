@@ -1,6 +1,6 @@
 package com.example.allone.controllers;
 
-import com.example.allone.models.ChatIA;
+import com.example.allone.DTO.ChatIADTO;
 import com.example.allone.services.OpenRouterService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,7 +17,7 @@ public class IAController {
     }
 
     @PostMapping
-    public ResponseEntity<String> chat(@RequestBody ChatIA req) {
+    public ResponseEntity<String> chat(@RequestBody ChatIADTO req) {
         return ResponseEntity.ok(svc.chat(req.getContenido()));
     }
 }

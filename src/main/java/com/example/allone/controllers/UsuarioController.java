@@ -5,33 +5,30 @@ import com.example.allone.config.JwtTokenProvider;
 import com.example.allone.errors.ResourceNotFoundException;
 import com.example.allone.models.Contacto;
 import com.example.allone.models.Usuario;
-import com.example.allone.models.UsuarioGoogle;
 import com.example.allone.repositories.ContactoRepository;
-import com.example.allone.repositories.UsuarioGoogleRepository;
 import com.example.allone.repositories.UsuarioRepository;
 import com.example.allone.services.UsuarioService;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.Jwts;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import net.coobird.thumbnailator.Thumbnails;
-import org.apache.catalina.User;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.crypto.SecretKey;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -56,9 +53,6 @@ public class UsuarioController {
     private UsuarioRepository userRepository;
 
     @Autowired
-    private UsuarioGoogleRepository usuarioGoogleRepository;
-
-    @Autowired
     private PasswordEncoder passwordEncoder;
 
     @Autowired
@@ -69,6 +63,60 @@ public class UsuarioController {
 
     @Autowired
     private JwtTokenProvider jwtTokenProvider;
+
+    @GetMapping("/decode-jwt")
+    public ResponseEntity<?> decodeJwt(@RequestHeader(value = "Authorization", required = false) String authHeader) {
+        try {
+            // Verificar que el header de autorización existe
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("error", "Authorization header missing or invalid"));
+            }
+
+            String jwtToken = authHeader.substring(7); // Eliminar "Bearer "
+
+            // Verificar que el token no esté vacío
+            if (jwtToken.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("error", "Token is empty"));
+            }
+
+            SecretKey key = jwtTokenProvider.claveFirma();
+
+            // Decodificar y verificar el token
+            Claims claims = Jwts.parser()
+                    .verifyWith(key)
+                    .build()
+                    .parseSignedClaims(jwtToken)
+                    .getPayload();
+
+            // Verificar claims esenciales
+            if (claims.get("id") == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("error", "Invalid token claims"));
+            }
+
+            // Construir respuesta
+            Map<String, Object> response = new HashMap<>();
+            response.put("avatar", "http://localhost:8080/uploads/avatars/" + claims.get("avatar", String.class));
+            response.put("id", claims.get("id"));
+            response.put("nombre", claims.get("name"));
+            response.put("email", claims.get("email"));
+            response.put("username", claims.get("username"));
+
+            return ResponseEntity.ok(response);
+
+        } catch (ExpiredJwtException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Token expired", "details", e.getMessage()));
+        } catch (JwtException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Invalid token", "details", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Internal server error", "details", e.getMessage()));
+        }
+    }
 
     @GetMapping("/api/v1/usuario/edit/{usuarioId}")
     public ResponseEntity<UsuarioDTO> getUsuarioParaEditar(@PathVariable Long usuarioId) {
@@ -84,14 +132,14 @@ public class UsuarioController {
             WebRequest request,
             Authentication authentication) {
 
-        // 1. Manejar la imagen si viene en la petición
+        // Manejar la imagen si viene en la petición
         String nombreArchivo = null;
         if (dto.getAvatar() != null && !dto.getAvatar().isEmpty()) {
             nombreArchivo = guardarFotos(dto.getAvatar());
             request.setAttribute("nombreArchivo", nombreArchivo, WebRequest.SCOPE_REQUEST);
         }
 
-        // 2. Validar solo campos que vienen en el DTO
+        // Validar solo campos que vienen en el DTO
         if (dto.getNombre() != null) {
             if (dto.getNombre().isBlank()) {
                 return ResponseEntity.badRequest().body(Map.of("error", "El nombre no puede estar vacío"));
@@ -105,13 +153,13 @@ public class UsuarioController {
             }
         }
 
-        // 3. Actualizar usuario (solo campos proporcionados)
+        // Actualizar usuario (solo campos proporcionados)
         Usuario usuarioActualizado = usuarioService.actualizarUsuarioParcial(usuarioId, dto, nombreArchivo);
 
-        // 4. Generar nuevo token
+        // Generar nuevo token
         String nuevoToken = jwtTokenProvider.generateToken(authentication);
 
-        // 5. Construir respuesta
+        // Construir respuesta
         Map<String, Object> response = new HashMap<>();
         response.put("success", "Usuario actualizado correctamente");
         response.put("token", nuevoToken);
@@ -142,21 +190,6 @@ public class UsuarioController {
                 })
                 .collect(Collectors.toList());
 
-        // 2. Obtener usuarios Google y mapear
-        List<Map<String, Object>> usuariosGoogleSimplificados = usuarioGoogleRepository.findAll().stream()
-                .map(usuario -> {
-                        Map<String, Object> map = new HashMap<>();
-                        map.put("id", usuario.getId());
-                        map.put("name", usuario.getNombre());
-                        map.put("username", usuario.getUsername());
-                        map.put("avatar", usuario.getAvatar());
-                        return map;
-                })
-                .collect(Collectors.toList());
-
-        // 3. Combinar ambas listas
-        usuariosSimplificados.addAll(usuariosGoogleSimplificados);
-
         return ResponseEntity.ok(usuariosSimplificados);
     }
 
@@ -183,31 +216,14 @@ public class UsuarioController {
             @RequestParam boolean aceptar) {
 
         try {
-            // 1. Verificar y decodificar el token JWT
-            //String jwt = token.replace("Bearer ", "");
-            // Aquí necesitas tu lógica para decodificar el JWT
-            // Long userId = jwtUtil.getUserIdFromToken(jwt);
-
-            // 2. Buscar la solicitud
+            // Buscar la solicitud
             Contacto solicitud = contactoRepository.findById(solicitudId)
                     .orElseThrow(() -> new ResourceNotFoundException("Solicitud no encontrada"));
 
-            // 3. Verificar que el usuario actual es el destinatario
-            // if (!solicitud.getContacto().getId().equals(userId)) {
-            //     return ResponseEntity.status(HttpStatus.FORBIDDEN).body("No autorizado");
-            // }
-
-            // 4. Procesar la respuesta
+            // Procesar la respuesta
             if (aceptar) {
                 solicitud.setAceptado(true);
                 contactoRepository.save(solicitud);
-
-                // Opcional: Crear la relación inversa si es bidireccional
-                // Contacto relacionInversa = new Contacto();
-                // relacionInversa.setUsuario(solicitud.getContacto());
-                // relacionInversa.setContacto(solicitud.getUsuario());
-                // relacionInversa.setAceptado(true);
-                // contactoRepository.save(relacionInversa);
 
                 return ResponseEntity.ok().body(Map.of(
                         "mensaje", "Solicitud aceptada",
@@ -234,10 +250,10 @@ public class UsuarioController {
     public ResponseEntity<List<Map<String, Object>>> getSolicitudesPendientes(
             @PathVariable Long userId
     ) {
-        // 1. Obtener solicitudes donde el usuario actual es el destinatario
+        // Obtener solicitudes donde el usuario actual es el destinatario
         List<Contacto> solicitudes = contactoRepository.findByContactoIdAndAceptadoFalse(userId);
 
-        // 2. Mapear a formato JSON
+        // Mapear a formato JSON
         List<Map<String, Object>> response = solicitudes.stream()
                 .map(solicitud -> {
                     Map<String, Object> map = new HashMap<>();
@@ -276,13 +292,13 @@ public class UsuarioController {
 
     @GetMapping("/usuarios/{id}/contactos")
     public ResponseEntity<List<Usuario>> getContactos(@PathVariable Long id) {
-        // 1. Obtener contactos donde el usuario es el emisor (usuario_id = id)
+        // Obtener contactos donde el usuario es el emisor (usuario_id = id)
         List<Contacto> contactosComoEmisor = contactoRepository.findByUsuarioIdAndAceptadoTrue(id);
 
-        // 2. Obtener contactos donde el usuario es el receptor (contacto_id = id)
+        // Obtener contactos donde el usuario es el receptor (contacto_id = id)
         List<Contacto> contactosComoReceptor = contactoRepository.findByContactoIdAndAceptadoTrue(id);
 
-        // 3. Combinar y eliminar duplicados
+        // Combinar y eliminar duplicados
         Set<Usuario> contactosUnicos = new HashSet<>();
         contactosComoEmisor.forEach(c -> contactosUnicos.add(c.getContacto()));
         contactosComoReceptor.forEach(c -> contactosUnicos.add(c.getUsuario()));
@@ -320,18 +336,18 @@ public class UsuarioController {
     @PostMapping(value = "/api/v1/auth/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Map<String, String>> crearUsuario(@Valid @ModelAttribute UserRegisterDTO registroDTO, WebRequest request) {
 
-        // 1. Validar contraseñas (esto no está cubierto por tu ExceptionHandler)
+        // Validar contraseñas (esto no está cubierto por tu ExceptionHandler)
         if (!registroDTO.getPassword().equals(registroDTO.getPassword2())) {
             return ResponseEntity.badRequest().body(Map.of("error", "Las contraseñas no coinciden"));
         }
 
-        // 2. Guardar la imagen
+        // Guardar la imagen
         String nombreArchivo = guardarFotos(registroDTO.getAvatar());
 
-        // 🔹 Establecer el nombre del archivo en el request (para limpieza en caso de error)
+        // Establecer el nombre del archivo en el request (para limpieza en caso de error)
         request.setAttribute("nombreArchivo", nombreArchivo, WebRequest.SCOPE_REQUEST);
 
-        // 3. Intentar guardar el usuario (deja que el ExceptionHandler maneje DataIntegrityViolationException)
+        // Intentar guardar el usuario (deja que el ExceptionHandler maneje DataIntegrityViolationException)
         Usuario usuario = Usuario.builder()
                 .nombre(registroDTO.getNombre())
                 .username(registroDTO.getUsername())

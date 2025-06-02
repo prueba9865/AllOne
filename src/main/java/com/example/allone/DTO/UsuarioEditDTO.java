@@ -46,5 +46,5 @@ public class UsuarioEditDTO {
     )
     private String password2;
 
-    private String tipo; // "local" o "google"
+    private String tipo; // "local" o "google" o cualquier otra plataforma de login
 }

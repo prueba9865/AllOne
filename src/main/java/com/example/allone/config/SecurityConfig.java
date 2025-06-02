@@ -1,6 +1,5 @@
 package com.example.allone.config;
 
-import jakarta.servlet.http.Cookie;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -8,15 +7,10 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
-import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
-import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -78,17 +72,6 @@ public class SecurityConfig {
                 )
                 // Mueve la configuración de OAuth2 después del filtro JWT
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
-                .oauth2Login(oauth2 -> oauth2
-                        .successHandler((request, response, authentication) -> {
-                            String jwtToken = jwtTokenProvider.generateTokenGoogle(authentication);
-                            Cookie cookie = new Cookie("token", jwtToken);
-                            cookie.setHttpOnly(false);
-                            cookie.setSecure(true); // Solo HTTPS
-                            cookie.setPath("/");
-                            response.addCookie(cookie);
-                            response.sendRedirect("/add");
-                        })
-                )
                 .logout(logout -> logout
                         .logoutSuccessUrl("/")
                         .permitAll()

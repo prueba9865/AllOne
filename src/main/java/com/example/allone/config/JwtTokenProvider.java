@@ -1,8 +1,6 @@
 package com.example.allone.config;
 
 import com.example.allone.models.Usuario;
-import com.example.allone.models.UsuarioGoogle;
-import com.example.allone.repositories.UsuarioGoogleRepository;
 import com.example.allone.repositories.UsuarioRepository;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtParser;
@@ -11,7 +9,6 @@ import io.jsonwebtoken.security.Keys;
 import io.micrometer.common.util.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Component;
@@ -20,17 +17,11 @@ import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Component
 public class JwtTokenProvider {
     private static final String SECRET_KEY = "zskfldj394852l3kj4tho9a8yt9qa4)()(%&asfdasdrtg45545·%·%";
     private static final long EXPIRATION_TIME = 86400000; // 1 día
-
-    @Autowired
-    private UsuarioGoogleRepository usuarioGoogleRepository;
 
     @Autowired
     private UsuarioRepository usuarioRepository;
@@ -94,7 +85,7 @@ public class JwtTokenProvider {
             validator.parse(token);
             return true;
         }catch (Exception e){
-            //Aquí entraría si el token no fuera correcto o estuviera caducado.
+            // Aquí entraría si el token no fuera correcto o estuviera caducado.
             // Podríamos hacer un log de los fallos
             System.err.println("Error al validar el token: " + e.getMessage());
             return false;

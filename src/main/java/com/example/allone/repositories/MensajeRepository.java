@@ -10,7 +10,6 @@ import java.util.List;
 
 @Repository
 public interface MensajeRepository extends JpaRepository<Mensaje, Long> {
-    //List<Mensaje> findByChatIdOrderByCreatedAtAsc(Long chatId);
     @Query("SELECT m FROM Mensaje m WHERE " +
             "(m.usuario.id = :idUsuario1 AND m.contacto.id = :idUsuario2) OR " +
             "(m.usuario.id = :idUsuario2 AND m.contacto.id = :idUsuario1) " +

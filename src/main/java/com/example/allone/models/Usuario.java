@@ -9,7 +9,6 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 
@@ -56,9 +55,6 @@ public class Usuario implements UserDetails {
     @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference // ← Anotación clave aquí (permite serializar los mensajes)
     private List<Mensaje> mensajesIA = new ArrayList<>();
-
-    /*@ManyToMany(mappedBy = "participantes")
-    private Set<Chat> chats = new HashSet<>();*/
 
     @PrePersist
     public void prePersist() {

@@ -12,7 +12,7 @@ import lombok.Data;
 @AllArgsConstructor
 @Builder
 public class UsuarioDTO {
-    private Long id; // Puede ser Long o String
+    private Long id;
 
     @NotBlank(message = "El nombre no puede estar en blanco")
     @Pattern(regexp = "^[A-Za-zñÑáéíóúÁÉÍÓÚ ]{1,50}$", message = "El nombre solo puede contener letras y espacios")
@@ -23,5 +23,5 @@ public class UsuarioDTO {
     @NotBlank(message = "El email no puede estar en blanco")
     private String email;
     private String avatar;
-    private String tipo; // "local" o "google"
+    private String tipo; // "local" o "google" o cualquier otra plataforma de login
 }
