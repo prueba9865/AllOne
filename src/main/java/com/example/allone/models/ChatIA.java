@@ -1,9 +1,7 @@
-package com.example.allone.DTO;
+package com.example.allone.models;
 
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.PrePersist;
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -16,13 +14,19 @@ import java.time.temporal.ChronoUnit;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ChatIADTO {
+@Entity
+public class ChatIA {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String contenido;
     private LocalDateTime createdAt;
+
+    @ManyToOne
+    @JoinColumn(name = "usuario_id", nullable = false)
+    @JsonBackReference // ← Anotación clave aquí (evita que se serialice el usuario dentro de mensaje
+    private Usuario usuario;
 
     @PrePersist
     public void prePersist() {
