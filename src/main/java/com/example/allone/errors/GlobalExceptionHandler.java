@@ -63,24 +63,21 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<Map<String, String>> handleDataIntegrityViolationException(
-            DataIntegrityViolationException ex,
-            WebRequest request) {
-
-        // Extraer el nombre del archivo si es posible (depende de tu implementación)
-        String nombreArchivo = extraerNombreArchivoDeRequest(request); // Método a implementar
-
-        // Eliminar el archivo subido
-        if (nombreArchivo != null) {
-            try {
-                Files.deleteIfExists(Paths.get("uploads/avatars/" + nombreArchivo));
-            } catch (IOException e) {
-                log.error("Error al eliminar archivo fallido: " + nombreArchivo, e);
-            }
-        }
+            DataIntegrityViolationException ex, WebRequest request) {
 
         Map<String, String> errorDetails = new HashMap<>();
-        errorDetails.put("error", "Violación de integridad de datos");
-        errorDetails.put("message", "El email o el nombre de usuario ya están en uso. Intenta con otro.");
+        String rootMsg = ex.getRootCause() != null ? ex.getRootCause().getMessage() : ex.getMessage();
+
+        if (rootMsg.contains("foreign key constraint")) {
+            errorDetails.put("error", "Restricción de integridad referencial");
+            errorDetails.put("message", "No se puede eliminar el usuario porque tiene datos asociados.");
+        } else if (rootMsg.contains("unique constraint") || rootMsg.contains("duplicate key")) {
+            errorDetails.put("error", "Violación de unicidad");
+            errorDetails.put("message", "El email o el nombre de usuario ya están en uso.");
+        } else {
+            errorDetails.put("error", "Violación de integridad de datos");
+            errorDetails.put("message", "Operación no permitida por restricciones de la base de datos.");
+        }
 
         return ResponseEntity.status(HttpStatus.CONFLICT).body(errorDetails);
     }
